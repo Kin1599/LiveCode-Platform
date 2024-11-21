@@ -1,0 +1,31 @@
+
+/vendor/
+/bin/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+
+
+*.log
+*.trace
+*.prof
+
+
+.DS_Store
+Thumbs.db
+.idea/
+/.vscode/
+*.swp
+*~
+
+# Git конфигурационные файлы
+.git/
+
+# Любые временные файлы и результаты сборки
+*.tmp
+*.temp
+*.bak
