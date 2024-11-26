@@ -29,3 +29,5 @@ Thumbs.db
 *.tmp
 *.temp
 *.bak
+
+local.yaml

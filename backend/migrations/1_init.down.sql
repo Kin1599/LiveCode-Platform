@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS "Users";
+DROP TABLE IF EXISTS "Sessions";
+DROP TABLE IF EXISTS "CodeSnippets";
+DROP TABLE IF EXISTS "Comments";
+DROP TABLE IF EXISTS "SessionParticipants";
+DROP TABLE IF EXISTS "CodeVersions";
+DROP TABLE IF EXISTS "Templates";
+DROP TABLE IF EXISTS "Messages";
