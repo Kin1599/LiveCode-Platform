@@ -64,7 +64,7 @@
         width: 100%;
         height: 50px;
         background-color: #ffffff;
-        border-radius: 15px;
+        border-radius: 10px;
         position: relative;
         padding-left: 1rem;
     }
@@ -75,8 +75,10 @@
         border-style: solid;
         width: 104%;
         height: 3.5rem;
-        border-radius: 15px;
+        border-radius: 10px;
         cursor: pointer;
+        font-weight: 700;
+        font-size: 1.2rem;
     }
 
     form button:hover {
@@ -114,7 +116,7 @@
         background-color: #ffffff;
         width: 104%;
         height: 3.5rem;
-        border-radius: 15px;
+        border-radius: 10px;
         cursor: pointer;
         font-size: 20px;
         border-style: none;
