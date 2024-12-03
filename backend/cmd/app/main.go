@@ -3,25 +3,34 @@ package main
 import (
 	"context"
 	"fmt"
+	"livecode/internal/app"
 	"livecode/internal/config"
-	"livecode/internal/database"
 )
 
 func main() {
-
 	cfg := config.MustLoad()
-	db, err := database.New(cfg.StoragePath)
-	if err != nil {
-		fmt.Print("1", err)
-	}
-
-	defer db.Stop()
+	storagePath := config.ConStringFromCfg(cfg.StoragePath)
+	authService := app.New(storagePath)
 
 	ctx := context.Background()
 
-	usr, err := db.User(ctx, "gemail.com")
+	userUUID, err := authService.RegisterNewUser(ctx, "TestUserEmail@gmail.com", "TestUserPass")
 	if err != nil {
-		fmt.Println(fmt.Errorf("%w", err))
+		panic(err)
 	}
-	fmt.Println(usr)
+	fmt.Println(userUUID)
+
+	tkn, err := authService.Login(ctx, "TestUserEmail@gmail.com", "TestUserPass")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(tkn)
+
+	// tkn, err = authService.Login(ctx, "TestUserEmail@gmail.com", "WrongPassWord")
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// fmt.Println(tkn)
 }

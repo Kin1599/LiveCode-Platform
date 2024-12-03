@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -49,4 +50,13 @@ func fetchConfigPath() string {
 	}
 
 	return res
+}
+
+func ConStringFromCfg(storageCfg StorageConfig) string {
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable",
+		storageCfg.User,
+		storageCfg.Pass,
+		storageCfg.Port,
+		storageCfg.Name,
+	)
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"livecode/internal/config"
 	"livecode/internal/models"
 	"time"
 
@@ -28,19 +27,10 @@ const (
 	getUserByEmail = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
 )
 
-func conStringFromCfg(storageCfg config.StorageConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable",
-		storageCfg.User,
-		storageCfg.Pass,
-		storageCfg.Port,
-		storageCfg.Name,
-	)
-}
-
-func New(storageCfg config.StorageConfig) (*Storage, error) {
+func New(storagePath string) (*Storage, error) {
 	const op = "database.New"
 
-	db, err := sql.Open("postgres", conStringFromCfg(storageCfg))
+	db, err := sql.Open("postgres", storagePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s %w", op, err)
 	}
@@ -52,27 +42,28 @@ func (s *Storage) Stop() error {
 	return s.db.Close()
 }
 
-func (s *Storage) SaveUser(ctx context.Context, email string, passHash string) (int64, error) {
+func (s *Storage) SaveUser(ctx context.Context, email string, passHash string) (uuid.UUID, error) {
 	const op = "databse.SaveUser"
 
 	stmt, err := s.db.Prepare(saveNewUser)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	timeNow := time.Now()
-	_, err = stmt.ExecContext(ctx, uuid.New(), email, "", passHash, timeNow, timeNow)
+	newUUID := uuid.New()
+	_, err = stmt.ExecContext(ctx, newUUID, email, "", passHash, timeNow, timeNow)
 
 	if err != nil {
 		pgErr, ok := err.(*pq.Error)
 		if ok && pgErr.Code == "23505" {
-			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
+			return uuid.Nil, fmt.Errorf("%s: %w", op, ErrUserExists)
 		}
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return 0, nil
+	return newUUID, nil
 }
 
 func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
@@ -87,6 +78,7 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 
 	var user models.User
 	err = row.Scan(&user.ID, &user.Email, &user.PasswordHash)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)

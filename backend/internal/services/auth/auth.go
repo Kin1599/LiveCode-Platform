@@ -23,7 +23,7 @@ type UserSaver interface {
 		ctx context.Context,
 		email string,
 		password string,
-	) (id int64, err error)
+	) (userUUID uuid.UUID, err error)
 }
 
 var (
@@ -32,7 +32,6 @@ var (
 
 type UserProvider interface {
 	User(ctx context.Context, email string) (models.User, error)
-	IsAdmin(ctx context.Context, userID uuid.UUID) (bool, error)
 }
 
 func New(
@@ -45,16 +44,10 @@ func New(
 	}
 }
 
-type LoginUser struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func (a *Auth) Login(
 	ctx context.Context,
 	email string,
 	password string,
-	appID int,
 ) (string, error) {
 	const op = "Auth.Login"
 
@@ -67,7 +60,7 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	if ok, err := ComparePassword(password, user.PasswordHash); ok && err != nil {
+	if ok, err := ComparePassword(password, user.PasswordHash); !ok || err != nil {
 
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
@@ -81,20 +74,20 @@ func (a *Auth) Login(
 	return token, nil
 }
 
-func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (int64, error) {
+func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (uuid.UUID, error) {
 	const op = "Auth.RegisterNewUser"
 
 	passHash, err := GeneratePassword(pass)
 	if err != nil {
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	id, err := a.usrSaver.SaveUser(ctx, email, passHash)
+	userUUID, err := a.usrSaver.SaveUser(ctx, email, passHash)
 	if err != nil {
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return id, nil
+	return userUUID, nil
 }
