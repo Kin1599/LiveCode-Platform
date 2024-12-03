@@ -25,9 +25,9 @@
 
 <h2>Войти с помощью</h2>
 <div class="but-log">
-    <button class="button-login"><img src="./Google Icon.svg" alt="Google" height="22" width="22">Google</button>
-    <button class="button-login"><img src="./Github Icon.svg" alt="GitHub" height="27" width="27">GitHub</button>
-    <button class="button-login"><img src="./Apple Icon.svg" alt="Apple" height="25" width="25">Apple</button>
+    <button class="button-login"><img src="./images/Google Icon.svg" alt="Google" height="22" width="22">Google</button>
+    <button class="button-login"><img src="./images/Github Icon.svg" alt="GitHub" height="27" width="27">GitHub</button>
+    <button class="button-login"><img src="./images/Apple Icon.svg" alt="Apple" height="25" width="25">Apple</button>
 </div>
 
 <style>
