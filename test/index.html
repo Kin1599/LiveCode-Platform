@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Code Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/mode/javascript/javascript.min.js"></script>
+</head>
+<body>
+    <h1>Live Code Editor</h1>
+    <textarea id="codeEditor"></textarea>
+    <script>
+        let ws;
+        const userId = generateUserId();
+
+        const editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
+            mode: "javascript",
+            lineNumbers: true
+        });
+
+        function generateUserId() {
+            return Math.random().toString(36).substring(2) + Date.now().toString(36);
+        }
+
+        function connect() {
+            ws = new WebSocket("ws://localhost:8080/ws");
+
+            ws.onopen = function () {
+                console.log("Connected to WebSocket server");
+                // Send initial userId to server
+                ws.send(JSON.stringify({ type: "init", userId: userId }));
+            };
+
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                console.log("Received message:", data);
+                if (data.userId !== userId && data.type === "update") {
+                    editor.operation(function () {
+                        editor.replaceRange(data.text, data.from, data.to, "server");
+                    });
+                }
+            };
+
+            ws.onclose = function () {
+                console.log("WebSocket connection closed, retrying...");
+                setTimeout(connect, 1000); // Reconnect after 1 second
+            };
+
+            ws.onerror = function (error) {
+                console.error("WebSocket error:", error);
+            };
+
+            editor.on("change", function (instance, changeObj) {
+                if (changeObj.origin === "server") return;
+
+                const message = {
+                    type: "update",
+                    text: changeObj.text.join("\n"),
+                    from: changeObj.from,
+                    to: changeObj.to,
+                    userId: userId
+                };
+                console.log("Sending message:", message);
+                ws.send(JSON.stringify(message));
+            });
+        }
+
+        connect();
+    </script>
+</body>
+</html>
