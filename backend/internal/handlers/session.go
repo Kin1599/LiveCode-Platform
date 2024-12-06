@@ -31,11 +31,11 @@ var mutex = &sync.Mutex{}
 // @Failure 500 {object} gin.H
 // @Router /api/session [post]
 func CreateSession(c *gin.Context) {
-	ownerId := c.Query("owner_id")
-	editable := c.Query("editable") == "true"
-	title := c.Query("title")
-	language := c.Query("language")
-	maxUsersStr := c.Query("max_users")
+	ownerId := c.PostForm("owner_id")
+	editable := c.PostForm("editable") == "true"
+	title := c.PostForm("title")
+	language := c.PostForm("language")
+	maxUsersStr := c.PostForm("max_users")
 
 	maxUsers, err := strconv.ParseInt(maxUsersStr, 10, 64)
 	if err != nil {
