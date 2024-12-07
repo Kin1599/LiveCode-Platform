@@ -14,6 +14,7 @@ type Config struct {
 }
 
 type StorageConfig struct {
+	Host string `yaml:"db_host"`
 	Name string `yaml:"db_name"`
 	User string `yaml:"db_user"`
 	Pass string `yaml:"db_pass"`
@@ -53,9 +54,10 @@ func fetchConfigPath() string {
 }
 
 func ConStringFromCfg(storageCfg StorageConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable",
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		storageCfg.User,
 		storageCfg.Pass,
+		storageCfg.Host,
 		storageCfg.Port,
 		storageCfg.Name,
 	)
