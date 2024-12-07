@@ -16,7 +16,7 @@ var sessions = make(map[uuid.UUID]models.Session)
 var mutex = &sync.Mutex{}
 
 // CreateSession godoc
-// @summary Создание новой сессии
+// @Summary Создание новой сессии
 // @Description Создание новой сессии
 // @Tags session
 // @Accept json
@@ -79,14 +79,15 @@ func CreateSession(c *gin.Context) {
 }
 
 // GetSession godoc
-// @summary Получение сессии по ID
+// @Summary Получение сессии по ID
 // @Description Получение сессии по ID
 // @Tags session
 // @Accept json
 // @Produce json
 // @Param session_id query string true "ID сессии"
-// @Success 200 {object} gin.H
+// @Success 200 {object} models.Session
 // @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
 // @Failure 500 {object} gin.H
 // @Router /api/session [get]
 func GetSession(c *gin.Context) {

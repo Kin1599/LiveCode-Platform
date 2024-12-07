@@ -15,13 +15,12 @@ func InitAuthService(service *auth.Auth) {
 }
 
 // Register godoc
-// @summary Регистрация нового пользователя
+// @Summary Регистрация пользователя
 // @Description Регистрация нового пользователя
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param email body string true "Email"
-// @Param password body string true "Password"
+// @Param user body struct{Email string; Password string} true "User data"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} gin.H
 // @Failure 500 {object} gin.H
@@ -47,14 +46,13 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user_id": userUUID})
 }
 
-// Register godoc
-// @summary Авторизация пользователя
+// Login godoc
+// @Summary Авторизация пользователя
 // @Description Вход пользователя
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param email body string true "Email"
-// @Param password body string true "Password"
+// @Param user body struct{Email string; Password string} true "User data"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} gin.H
 // @Failure 500 {object} gin.H
@@ -78,4 +76,16 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// Ping godoc
+// @Summary Проверка работы сервера
+// @Description Эндпоинт для проверки работы сервера
+// @Tags ping
+// @Accept json
+// @Produce json
+// @Success 200 {string} string "pong"
+// @Router /api/ping [get]
+func Ping(c *gin.Context) {
+	c.String(http.StatusOK, "pong")
 }

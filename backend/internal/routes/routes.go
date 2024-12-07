@@ -21,6 +21,8 @@ func SetupRouter() *gin.Engine {
 	config.AllowMethods = []string{"*"}
 	router.Use(cors.New(config))
 
+	router.GET("/api/ping", handlers.Ping)
+
 	router.POST("/api/register", handlers.Register)
 	router.POST("/api/login", handlers.Login)
 
