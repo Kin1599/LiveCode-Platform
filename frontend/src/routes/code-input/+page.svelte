@@ -67,7 +67,7 @@
         <button on:click={toggleSidebar}
           ><img src="./images/icon-sidebar.svg" alt="" /></button
         >
-        <a href="/main"><img src="./images/icon-home.svg" alt="" /></a>
+        <a href="/#"><img src="./images/icon-home.svg" alt="" /></a>
       </div>
       <div style="margin-left: 1.3rem;">{projectName}</div>
       <div class="prj-settings">{lastModified}</div>
