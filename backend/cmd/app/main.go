@@ -10,11 +10,20 @@ import (
 	"livecode/internal/websocket"
 )
 
+import (
+	
+)
+
 // @title LiveCode API
 // @version 1.0
 // @description LiveCode API
 // @host localhost:8080
 // @BasePath /api
+
+type Project struct {
+	Root map[string]interface{} `json:"root"`
+}
+
 func main() {
 	cfg := config.MustLoad()
 	storagePath := config.ConStringFromCfg(cfg.StoragePath)
