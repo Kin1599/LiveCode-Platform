@@ -30,4 +30,6 @@ Thumbs.db
 *.temp
 *.bak
 
-local.yaml
+configs/local.yaml
+configs/config
+configs/credentials
