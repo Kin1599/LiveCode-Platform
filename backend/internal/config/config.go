@@ -14,11 +14,12 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Host string `yaml:"db_host"`
-	Name string `yaml:"db_name"`
-	User string `yaml:"db_user"`
-	Pass string `yaml:"db_pass"`
-	Port int    `yaml:"db_port"`
+	Host       string `yaml:"db_host"`
+	Name       string `yaml:"db_name"`
+	User       string `yaml:"db_user"`
+	Pass       string `yaml:"db_pass"`
+	Port       int    `yaml:"db_port"`
+	BucketName string `yaml:"bucket_name"`
 }
 
 func MustLoad() *Config {

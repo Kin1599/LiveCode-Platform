@@ -5,3 +5,4 @@ storage_path:
   db_user: 
   db_pass: 
   db_port: 5432
+  bucket_name:

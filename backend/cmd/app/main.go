@@ -2,16 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"livecode/internal/app"
 	"livecode/internal/config"
 	"livecode/internal/handlers"
 	"livecode/internal/routes"
+	"livecode/internal/services/filestorage"
 	"livecode/internal/websocket"
-)
-
-import (
-	
 )
 
 // @title LiveCode API
@@ -20,16 +18,19 @@ import (
 // @host localhost:8080
 // @BasePath /api
 
-type Project struct {
-	Root map[string]interface{} `json:"root"`
-}
-
 func main() {
 	cfg := config.MustLoad()
 	storagePath := config.ConStringFromCfg(cfg.StoragePath)
 	authService := app.New(storagePath)
 
 	handlers.InitAuthService(authService)
+
+	s3Client, err := filestorage.New(cfg.StoragePath.BucketName)
+	if err != nil {
+		log.Fatalf("Error creating S3 client: %v", err)
+	}
+
+	handlers.InitS3Client(s3Client)
 
 	router := routes.SetupRouter()
 

@@ -32,5 +32,8 @@ func SetupRouter() *gin.Engine {
 		websocket.WsHandler(ctx.Writer, ctx.Request)
 	})
 
+	router.POST("/api/uploadProject", handlers.UploadProject)
+	router.GET("/api/downloadProject", handlers.DownloadProject)
+
 	return router
 }
