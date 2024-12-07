@@ -50,7 +50,14 @@
     let lastModified = "5 days ago";
     let size = "203.57 MB";
     let tabs = ["main.py", "script.js", "script.js", "script.js"];
-    let searchQuery = "";
+    let searchQuery: string = "";
+
+    let isSidebarVisible:boolean = true; 
+
+    // для переключения состояния видимости бокового блока
+    function toggleSidebar(): void {
+        isSidebarVisible = !isSidebarVisible;
+    }
 </script>
 
 
@@ -59,7 +66,7 @@
           <!-- Левая секция -->
         <div class="left-section">
             <div class="icons">
-                <button><img src="./images/icon-sidebar.svg" alt=""></button>
+                <button on:click={toggleSidebar}><img src="./images/icon-sidebar.svg" alt=""></button>
                 <form action="http://localhost:5173/main" target="_blank">
                     <button><img src="./images/icon-home.svg" alt=""></button>
                 </form>
@@ -89,7 +96,7 @@
     </div>
 
     <div class="content">
-        <div class="sidebar">
+        <div class="sidebar" class:hidden={isSidebarVisible ? '' : 'hidden'}>
             <div class="sidebar-header">
                 <h3>Files</h3>
                 <div >
@@ -249,6 +256,10 @@
         background-color: #1a5d05;
     }
 
+    .run-button:active {
+        background-color: #3D3D3D;
+    }
+
     .invite-button {
         background-color: #162832;
         padding: 0.5rem 0.75rem;
@@ -257,6 +268,13 @@
         justify-content: center;
         align-items: center;
         gap: 0.5rem;
+    }
+
+    .invite-button:hover {
+        background-color: #0b1419;
+        background: transparent;
+        border-width: 2px;
+        border-color: #6A6A6A66;
     }
 
     .invite-button img {
@@ -282,6 +300,12 @@
         padding: 20px;
         box-sizing: border-box;
         border-right: 1px solid #444;
+    }
+
+    .sidebar.hidden {
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
     }
 
     .sidebar h3 {
@@ -330,7 +354,6 @@
     .folder {
         margin-top: 10px;
         color: #FF7B00;
-        font-weight: bold;
     }
 
     .folder-files {
