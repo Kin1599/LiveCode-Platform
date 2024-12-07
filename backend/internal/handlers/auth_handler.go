@@ -26,20 +26,18 @@ func InitAuthService(service *auth.Auth) {
 // @Failure 500 {object} gin.H
 // @Router /api/register [post]
 func Register(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	email := c.PostForm("email")
+	password := c.PostForm("password")
 
-	if err := c.BindJSON(&req); err != nil {
+	if email == "" || password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	ctx := context.Background()
-	userUUID, err := authService.RegisterNewUser(ctx, req.Email, req.Password)
+	userUUID, err := authService.RegisterNewUser(ctx, email, password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -58,18 +56,16 @@ func Register(c *gin.Context) {
 // @Failure 500 {object} gin.H
 // @Router /api/login [post]
 func Login(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	email := c.PostForm("email")
+	password := c.PostForm("password")
 
-	if err := c.BindJSON(&req); err != nil {
+	if email == "" || password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	ctx := context.Background()
-	token, err := authService.Login(ctx, req.Email, req.Password)
+	token, err := authService.Login(ctx, email, password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login user"})
 		return

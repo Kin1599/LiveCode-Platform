@@ -35,6 +35,11 @@ func New(storagePath string) (*Storage, error) {
 		return nil, fmt.Errorf("%s %w", op, err)
 	}
 
+	if err := db.Ping(); err != nil {
+		fmt.Println(storagePath)
+		return nil, fmt.Errorf("%s: unable to connect to database %w", op, err)
+	}
+
 	return &Storage{db: db}, nil
 }
 
@@ -43,12 +48,14 @@ func (s *Storage) Stop() error {
 }
 
 func (s *Storage) SaveUser(ctx context.Context, email string, passHash string) (uuid.UUID, error) {
-	const op = "databse.SaveUser"
+	const op = "database.SaveUser"
 
 	stmt, err := s.db.Prepare(saveNewUser)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	defer stmt.Close()
 
 	timeNow := time.Now()
 	newUUID := uuid.New()
