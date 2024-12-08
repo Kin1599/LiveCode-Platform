@@ -1,32 +1,50 @@
 <script>
+  // @ts-nocheck
+
   let folders = [
     { name: "Shared with me", type: "shared", files: [] },
     { name: "Unnamed (1)", type: "folder", files: [] },
   ];
 
-  //для количества реп
-  let repls = 1;
+  let repls = 1; //для количества реп
+  let selected = "Repls"; //для выбранного пункта меню
+  let showBlocks = true; //для показа/скрытия бокового блока
+  let searchQuery = ""; //для поиска
+  let username = "username"; //для ника
 
-  // для выбранного пункта меню
-  let selected = "Repls";
-  // для изменения состояния выбранного пункта меню
+  let file = {
+    name: "QuintessentialDarkvioletCertifications",
+    date: "5 days ago",
+    size: "203.57 MiB",
+    visibility: "Public",
+  };
+
+  /**
+   * @type {null}
+   */
+  let openedFolder = null;
+
+  // Для изменения состояния выбранного пункта меню
   /**
    * @param {string} item
    */
   function selectItem(item) {
     selected = item;
+    openedFolder = null; // Закрыть папку при переключении на другой пункт
   }
 
-  let showBlocks = true;
-
-  // для переключения состояния видимости бокового блока
+  // Для переключения состояния видимости бокового блока
   function toggleVisibility() {
     showBlocks = !showBlocks;
   }
 
-  let searchQuery = "";
-
-  let user = "username";
+  // Для открытия папки
+  /**
+   * @param {any} folder
+   */
+  function openFolder(folder) {
+    openedFolder = folder;
+  }
 </script>
 
 <div class="layout">
@@ -98,18 +116,60 @@
         </div>
       </div>
 
-      <button class="new-folder" style="margin-bottom: 20px;"
-        ><img src="./images/icon-new-folder.svg" alt="" />Новая папка</button
-      >
-
-      <!-- Список папок -->
-      <div class="folder-list">
-        {#each folders as folder}
-          <div class="folder">
-            {folder.name}
-          </div>
-        {/each}
+      <div style="margin-bottom: 20px; font-size: 1.25rem;">
+        All {#if openedFolder}
+          / {openedFolder.name}{/if}
       </div>
+
+      {#if !openedFolder}
+        <button class="new-folder" style="margin-bottom: 20px;"
+          ><img src="./images/icon-new-folder.svg" alt="" />Новая папка</button
+        >
+        <!-- Список папок -->
+        <div class="folder-list">
+          {#each folders as folder}
+            <div class="folder" on:click={() => openFolder(folder)}>
+              {folder.name}
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Содержимое открытой папки -->
+      {#if openedFolder}
+        <div class="folder-contents">
+          <button style="border: none;" on:click={() => (openedFolder = null)}>
+            <img src="./images/icon-back.svg" alt="" /></button
+          >
+          <!-- <ul>
+          {#each openedFolder.files as file}
+            <li>{file}</li>
+          {/each}
+        </ul> -->
+
+          <div class="folder-item">
+            <div class="folder-info">
+              <div class="folder-header">
+                <img
+                  src="./images/python-icon.svg"
+                  alt="icon"
+                  class="folder-icon"
+                />
+                <div class="folder-details">
+                  <a class="folder-name" href="/code-input">{file.name}</a>
+                  <span class="folder-meta"> {file.date} • {file.size}</span>
+                </div>
+              </div>
+              <div class="folder-visibility">
+                🌐 {file.visibility}
+              </div>
+            </div>
+            <div class="folder-actions">
+              <button class="more-btn">•••</button>
+            </div>
+          </div>
+        </div>
+      {/if}
     {:else if selected === "Настройки"}
       <h2>Настройки</h2>
       <p>Здесь будет контент для настроек...</p>
@@ -119,7 +179,7 @@
   <div class="user-panel {showBlocks ? '' : 'hidden'}">
     <div class="user-info">
       <div class="avatar"></div>
-      <div><a href="/login">{user}</a></div>
+      <div><a href="/login">{username}</a></div>
     </div>
   </div>
 </div>
@@ -358,6 +418,81 @@
 
   .folder:hover {
     border: 1px solid #ff7b00;
+  }
+
+  .folder-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #162832; /* Цвет фона */
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin: 10px;
+  }
+
+  .folder-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    background: transparent;
+  }
+
+  .folder-header {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    margin-bottom: 1rem;
+  }
+
+  .folder-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background: transparent;
+  }
+
+  .folder-details {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    background: transparent;
+  }
+
+  .folder-name {
+    font-weight: bold;
+    background: transparent;
+  }
+
+  .folder-meta {
+    font-size: 0.875rem;
+    opacity: 0.7;
+    margin-left: 8px;
+    background: transparent;
+  }
+
+  .folder-visibility {
+    font-size: 0.875rem;
+    margin-top: 5px;
+    opacity: 0.8;
+    background: transparent;
+  }
+
+  .folder-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+  }
+
+  .more-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.8;
+  }
+
+  .more-btn:hover {
+    opacity: 1;
   }
 
   /* блок пользователя */
