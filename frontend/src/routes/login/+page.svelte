@@ -5,8 +5,25 @@
     console.log(await SendServer.getPing());
   }
 
-  let username = "";
+  let email = "";
   let password = "";
+  let message = "";
+
+  const handleLogin = async () => {
+    message = "";
+    try {
+      const response = await SendServer.login(email, password);
+      if (response.status === 200) {
+        localStorage.setItem("token", response.data.token);
+        message = "Успешный вход";
+      } else {
+        message = "Ошибка при входе: " + response.statusText;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      message = "Произошла ошибка при входе";
+    }
+  };
 </script>
 
 <form>
@@ -17,9 +34,9 @@
         required
         id="email"
         class="form-control"
-        type="text"
+        type="email"
         placeholder="Почта или имя пользователя"
-        bind:value={username}
+        bind:value={email}
       />
     </div>
     <div class="form-group">
@@ -33,7 +50,8 @@
       />
     </div>
     <div>
-      <a href="/#"><button type="submit" on:click={handlePing}>Войти</button></a
+      <a href="/#"
+        ><button type="submit" on:click={handleLogin}>Войти</button></a
       >
     </div>
 
