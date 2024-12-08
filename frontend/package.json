@@ -21,7 +21,6 @@
 	"dependencies": {
 		"@codemirror/lang-javascript": "^6.2.2",
 		"@codemirror/lang-python": "^6.1.6",
-		"svelte-codemirror-editor": "^1.4.1",
-		"@lezer/javascript": "^1.4.21"
+		"svelte-codemirror-editor": "^1.4.1"
 	}
 }
