@@ -10,20 +10,24 @@ services:
       - "8090:8090"
     
   db:
-    container_name: 'db'
+    container_name: "db"
     image: "postgres:17"
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - "${DB_PORT}:${DB_PORT}" 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_project:/var/lib/postgresql/data
     
   frontend:
     container_name: "frontend"
