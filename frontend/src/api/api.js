@@ -10,4 +10,19 @@ export default class SendServer{
             .then(response => response.data)
             .catch(error => console.log('Error fetching products', error));
     }
+
+    /**
+     * @param {string} email
+     * @param {any} password
+     */
+    static async login(email, password){
+        return await axios.post(baseUrl + '/login', {}, {
+            params: {
+                email: email,
+                password: password
+            }
+        })
+            .then(response => response.data)
+            .catch(error => console.log('Error fetching login', error));
+    }
 }
