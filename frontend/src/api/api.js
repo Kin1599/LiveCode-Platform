@@ -16,13 +16,19 @@ export default class SendServer{
      * @param {any} password
      */
     static async login(email, password){
-        return await axios.post(baseUrl + '/login', {}, {
-            params: {
+        try{
+            const response = await axios.post(baseUrl + '/login', {
                 email: email,
                 password: password
-            }
-        })
-            .then(response => response.data)
-            .catch(error => console.log('Error fetching login', error));
+            }, {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            });
+            return response;
+        } catch (error) {
+            console.error('Error fetching login:', error);
+            throw error;
+        }
     }
 }

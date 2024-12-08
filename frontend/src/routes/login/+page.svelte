@@ -13,9 +13,12 @@
     message = "";
     try {
       const response = await SendServer.login(email, password);
+      console.log(response);
       if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
         message = "Успешный вход";
+
+        window.location.assign('/');
       } else {
         message = "Ошибка при входе: " + response.statusText;
       }
@@ -50,9 +53,9 @@
       />
     </div>
     <div>
-      <a href="/#"
-        ><button type="submit" on:click={handleLogin}>Войти</button></a
-      >
+      
+      <button type="button" on:click={handleLogin}>Войти</button>
+      
     </div>
 
     <div class="link">
