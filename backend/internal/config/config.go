@@ -55,7 +55,7 @@ func fetchConfigPath() string {
 }
 
 func ConStringFromCfg(storageCfg StorageConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		storageCfg.User,
 		storageCfg.Pass,
 		storageCfg.Host,
