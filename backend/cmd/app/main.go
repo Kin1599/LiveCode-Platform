@@ -36,8 +36,8 @@ func main() {
 
 	go websocket.HandleMessages()
 
-	fmt.Println("Starting server on port 8080")
-	err_server := router.Run(":8080")
+	fmt.Println("Starting server on port 80")
+	err_server := router.Run(":80")
 	if err_server != nil {
 		fmt.Println("Error starting server:", err_server)
 	}
