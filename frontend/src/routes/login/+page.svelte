@@ -1,5 +1,5 @@
 <script>
-  import SendServer from "LiveCode-Platform/frontend/src/api/api";
+  import SendServer from "../../api/api";
 
   async function handlePing() {
     console.log(await SendServer.getPing());
