@@ -13,9 +13,9 @@
     <textarea id="codeEditor"></textarea>
     <div id="chat">
         <h2>Chat</h2>
-        <div id="messages"></div>
-        <button id="chatButton" onclick="">Send</button>
         <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="chatButton" onclick="">Send</button>
+	<div id="messages"></div>
     </div>
     <script>
         let ws;
@@ -81,7 +81,7 @@
                 chat.send(JSON.stringify({ type: "init", userId: userId }));
             };
 
-            chatws.onclose = function () {
+            chat.onclose = function () {
                 console.log("WebSocket connection closed, retrying...");
                 setTimeout(connect, 1000); // Reconnect after 1 second
             };
@@ -90,11 +90,13 @@
             chat.onmessage = function (event) {
                 const data = JSON.parse(event.data);
                 console.log("Received message:", data);
-                if (data.userId !== userId && data.type === "chat-message") {
+		console.log(userId);
+		console.log(data.type);
+                if (data.userId !== userId && data.message.type === "chat-message") {
                     console.log("Add new chat message")
                     const messages = document.getElementById("messages");
                     const newMessage = document.createElement("div");
-                    newMessage.textContent = data.text;
+                    newMessage.textContent = data.message.text;
                     messages.appendChild(newMessage);
                 }
             };
@@ -116,7 +118,7 @@
                     to: "",
                     userId: userId
                 };
-                console.log("Sending message:", message);
+                console.log("Sending message:", newMessage);
                 chat.send(JSON.stringify({message: newMessage}));
             }
 
