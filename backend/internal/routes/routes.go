@@ -3,6 +3,7 @@ package routes
 import (
 	"livecode/internal/handlers"
 	"livecode/internal/websocket"
+	"livecode/internal/websocket/chat"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,10 @@ func SetupRouter() *gin.Engine {
 	router.GET("/api/session", handlers.GetSession)
 	router.GET("/ws", func(ctx *gin.Context) {
 		websocket.WsHandler(ctx.Writer, ctx.Request)
+	})
+
+	router.GET("/chat", func(ctx *gin.Context) {
+		chat.ServeWs(ctx.Writer, ctx.Request)
 	})
 
 	router.POST("/api/uploadProject", handlers.UploadProject)

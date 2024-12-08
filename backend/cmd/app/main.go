@@ -10,6 +10,7 @@ import (
 	"livecode/internal/routes"
 	"livecode/internal/services/filestorage"
 	"livecode/internal/websocket"
+	"livecode/internal/websocket/chat"
 )
 
 // @title LiveCode API
@@ -35,6 +36,7 @@ func main() {
 	router := routes.SetupRouter()
 
 	go websocket.HandleMessages()
+	go chat.Run()
 
 	fmt.Println("Starting server on port 80")
 	err_server := router.Run(":80")

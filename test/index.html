@@ -11,6 +11,12 @@
 <body>
     <h1>Live Code Editor</h1>
     <textarea id="codeEditor"></textarea>
+    <div id="chat">
+        <h2>Chat</h2>
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="chatButton" onclick="">Send</button>
+	<div id="messages"></div>
+    </div>
     <script>
         let ws;
         const userId = generateUserId();
@@ -26,6 +32,7 @@
 
         function connect() {
             ws = new WebSocket("ws://localhost:8080/ws");
+            
 
             ws.onopen = function () {
                 console.log("Connected to WebSocket server");
@@ -65,6 +72,60 @@
                 console.log("Sending message:", message);
                 ws.send(JSON.stringify(message));
             });
+
+            chat = new WebSocket("ws://localhost:8080/chat");
+
+            chat.onopen = function () {
+                console.log("Connected to WebSocket server");
+                // Send initial userId to server
+                chat.send(JSON.stringify({ type: "init", userId: userId }));
+            };
+
+            chat.onclose = function () {
+                console.log("WebSocket connection closed, retrying...");
+                setTimeout(connect, 1000); // Reconnect after 1 second
+            };
+
+
+            chat.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                console.log("Received message:", data);
+		console.log(userId);
+		console.log(data.type);
+                if (data.userId !== userId && data.message.type === "chat-message") {
+                    console.log("Add new chat message")
+                    const messages = document.getElementById("messages");
+                    const newMessage = document.createElement("div");
+                    newMessage.textContent = data.message.text;
+                    messages.appendChild(newMessage);
+                }
+            };
+
+
+            chat.onerror = function (error) {
+                console.error("WebSocket chat error:", error);
+            };
+
+            var submitButton = document.getElementById("chatButton");
+            var chatText = document.getElementById('chatInput')
+
+            function sendChatMessage() {
+                if (chatText.value == "") return
+                const newMessage = {
+                    type: "chat-message",
+                    text: chatText.value,
+                    from: "",
+                    to: "",
+                    userId: userId
+                };
+                console.log("Sending message:", newMessage);
+                chat.send(JSON.stringify({message: newMessage}));
+            }
+
+            submitButton.addEventListener("click", function(event) {
+                sendChatMessage();
+            });
+
         }
 
         connect();
