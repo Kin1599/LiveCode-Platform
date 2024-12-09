@@ -18,7 +18,7 @@
         localStorage.setItem("token", response.data.token);
         message = "Успешный вход";
 
-        window.location.assign('/');
+        window.location.assign("/#");
       } else {
         message = "Ошибка при входе: " + response.statusText;
       }
@@ -53,13 +53,11 @@
       />
     </div>
     <div>
-      
       <button type="button" on:click={handleLogin}>Войти</button>
-      
     </div>
 
     <div class="link">
-      <a href="#">Забыли пароль?</a>
+      <a href="/forgot-pass">Забыли пароль?</a>
     </div>
   </div>
 </form>
@@ -158,6 +156,10 @@
   .link {
     margin-top: 0.5rem;
     align-self: flex-start;
+  }
+
+  .link a:hover {
+    color: #ff7b00;
   }
 
   .but-log {
