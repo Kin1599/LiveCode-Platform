@@ -27,6 +27,7 @@
 		"@codemirror/state": "^6.4.1",
 		"@codemirror/theme-one-dark": "^6.1.2",
 		"@codemirror/view": "^6.35.2",
+		"@sveltejs/adapter-static": "^3.0.6",
 		"axios": "^1.7.9",
 		"codemirror": "^6.0.1",
 		"svelte-codemirror-editor": "^1.4.1",
