@@ -1,6 +1,6 @@
 <script lang="ts">
   import CodeMirror from "svelte-codemirror-editor";
-  // import { javascript } from "@codemirror/lang-javascript";
+  import { javascript } from "@codemirror/lang-javascript";
   import { python } from "@codemirror/lang-python";
 
   let value: string = ""; //для codemirror
@@ -58,6 +58,66 @@
   function toggleSidebar(): void {
     isSidebarVisible = !isSidebarVisible;
   }
+
+  let ws: WebSocket; // WebSocket-соединение
+  const userId = generateUserId();
+  const userNickname = prompt("Введите ваше имя пользователя:") || "Гость";
+  const userColor = generateColor();
+
+  function generateUserId(): string {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+
+  function generateColor(): string {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  }
+
+  function connect() {
+    ws = new WebSocket("ws://localhost:8080/ws");
+
+    ws.onopen = () => {
+      console.log("WebSocket соединение установлено");
+      ws.send(
+        JSON.stringify({
+          type: "init",
+          userId,
+          color: userColor,
+          nickname: userNickname,
+        })
+      );
+    };
+
+    ws.onmessage = (event: MessageEvent) => {
+      const data = JSON.parse(event.data);
+      if (data.userId !== userId && data.type === "update") {
+        value = data.text; // обновление значения при получении данных
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("Соединение закрыто, переподключение...");
+      setTimeout(connect, 1000);
+    };
+
+    ws.onerror = (error) => {
+      console.error("Ошибка WebSocket:", error);
+    };
+  }
+
+  // Отправка изменений на сервер при изменении текста
+  $: {
+    if (ws?.readyState === WebSocket.OPEN) {
+      const message = {
+        type: "update",
+        text: value,
+        userId,
+        color: userColor,
+      };
+      ws.send(JSON.stringify(message));
+    }
+  }
+
+  connect();
 </script>
 
 <div class="container">
@@ -162,8 +222,9 @@
       </div>
       <div class="code-input">
         <CodeMirror
+          class="codemirror"
           bind:value
-          lang={python()}
+          lang={javascript()}
           styles={{
             "&": {
               maxWidth: "100%",
@@ -385,7 +446,6 @@
   .main {
     flex: 1;
     padding: 20px;
-    box-sizing: border-box;
     background-color: #162832;
   }
 
