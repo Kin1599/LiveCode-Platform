@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/mode/javascript/javascript.min.js"></script>
+    <style>
+        .cm-cursor {
+            border-left-width: 2px;
+        }
+    </style>
 </head>
 <body>
     <h1>Live Code Editor</h1>
@@ -15,29 +20,39 @@
         <h2>Chat</h2>
         <input type="text" id="chatInput" placeholder="Type a message...">
         <button id="chatButton" onclick="">Send</button>
-	<div id="messages"></div>
+        <div id="messages"></div>
     </div>
     <script>
         let ws;
         const userId = generateUserId();
+        const userNickname = prompt("Введите ваше имя пользователя:");
+        let userColor = generateColor();
 
         const editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
             mode: "javascript",
             lineNumbers: true
         });
 
+        // Set cursor color
+        editor.getWrapperElement().style.setProperty("--cursor-color", userColor);
+        const style = document.createElement("style");
+        style.innerHTML = `.cm-cursor { border-left-color: ${userColor} !important; }`;
+        document.head.appendChild(style);
+
         function generateUserId() {
             return Math.random().toString(36).substring(2) + Date.now().toString(36);
         }
 
+        function generateColor() {
+            return `#${Math.floor(Math.random()*16777215).toString(16)}`;
+        }
+
         function connect() {
             ws = new WebSocket("ws://localhost:8080/ws");
-            
 
             ws.onopen = function () {
                 console.log("Connected to WebSocket server");
-                // Send initial userId to server
-                ws.send(JSON.stringify({ type: "init", userId: userId }));
+                ws.send(JSON.stringify({ type: "init", userId: userId, color: userColor, nickname: userNickname }));
             };
 
             ws.onmessage = function (event) {
@@ -47,6 +62,10 @@
                     editor.operation(function () {
                         editor.replaceRange(data.text, data.from, data.to, "server");
                     });
+                }
+                if (data.userId !== userId && data.type === "cursor") {
+                    console.log("Update cursor position", data);
+                    updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
                 }
             };
 
@@ -67,33 +86,38 @@
                     text: changeObj.text.join("\n"),
                     from: changeObj.from,
                     to: changeObj.to,
-                    userId: userId
+                    userId: userId,
+                    color: userColor
                 };
                 console.log("Sending message:", message);
                 ws.send(JSON.stringify(message));
             });
 
-            chat = new WebSocket("ws://localhost:8080/chat");
+            editor.on("cursorActivity", function () {
+                const cursorPos = editor.getCursor();
+                const message = {
+                    type: "cursor",
+                    userId: userId,
+                    cursorX: cursorPos.ch,
+                    cursorY: cursorPos.line,
+                    color: userColor,
+                    nickname: userNickname
+                };
+                ws.send(JSON.stringify(message));
+            });
+
+            // Chat functionality
+            const chat = new WebSocket("ws://localhost:8080/chat");
 
             chat.onopen = function () {
                 console.log("Connected to WebSocket server");
-                // Send initial userId to server
-                chat.send(JSON.stringify({ type: "init", userId: userId }));
+                chat.send(JSON.stringify({ type: "init", userId: userId, color: userColor }));
             };
-
-            chat.onclose = function () {
-                console.log("WebSocket connection closed, retrying...");
-                setTimeout(connect, 1000); // Reconnect after 1 second
-            };
-
 
             chat.onmessage = function (event) {
                 const data = JSON.parse(event.data);
                 console.log("Received message:", data);
-		console.log(userId);
-		console.log(data.type);
                 if (data.userId !== userId && data.message.type === "chat-message") {
-                    console.log("Add new chat message")
                     const messages = document.getElementById("messages");
                     const newMessage = document.createElement("div");
                     newMessage.textContent = data.message.text;
@@ -101,31 +125,61 @@
                 }
             };
 
+            chat.onclose = function () {
+                console.log("WebSocket connection closed, retrying...");
+                setTimeout(connect, 1000); // Reconnect after 1 second
+            };
 
             chat.onerror = function (error) {
                 console.error("WebSocket chat error:", error);
             };
 
-            var submitButton = document.getElementById("chatButton");
-            var chatText = document.getElementById('chatInput')
-
-            function sendChatMessage() {
-                if (chatText.value == "") return
-                const newMessage = {
-                    type: "chat-message",
-                    text: chatText.value,
-                    from: "",
-                    to: "",
-                    userId: userId
-                };
-                console.log("Sending message:", newMessage);
-                chat.send(JSON.stringify({message: newMessage}));
-            }
+            const submitButton = document.getElementById("chatButton");
+            const chatInput = document.getElementById("chatInput");
 
             submitButton.addEventListener("click", function(event) {
-                sendChatMessage();
+                if (chatInput.value === "") return;
+                const newMessage = {
+                    type: "chat-message",
+                    text: chatInput.value,
+                    from: "",
+                    to: "",
+                    userId: userId,
+                    color: userColor
+                };
+                console.log("Sending message:", newMessage);
+                chat.send(JSON.stringify({ message: newMessage }));
+                chatInput.value = "";
             });
+        }
 
+        function updateCursor(userId, x, y, color, nickname) {
+            const cursorElementId = `cursor-${userId}`;
+            let cursorElement = document.getElementById(cursorElementId);
+            if (!cursorElement) {
+                cursorElement = document.createElement("div");
+                cursorElement.id = cursorElementId;
+                cursorElement.style.position = "absolute";
+                cursorElement.style.zIndex = "10";
+                cursorElement.style.width = "2px";
+                cursorElement.style.height = "20px";
+                cursorElement.style.backgroundColor = color;
+
+                const nicknameElement = document.createElement("div");
+                nicknameElement.style.position = "absolute";
+                nicknameElement.style.zIndex = "10";
+                nicknameElement.style.backgroundColor = color;
+                nicknameElement.style.color = "#FFF";
+                nicknameElement.textContent = nickname;
+                nicknameElement.style.top = "-20px";
+                nicknameElement.style.left = "2px";
+                cursorElement.appendChild(nicknameElement);
+
+                document.body.appendChild(cursorElement);
+            }
+            const cursorPos = editor.charCoords({ line: y, ch: x });
+            cursorElement.style.left = `${cursorPos.left}px`;
+            cursorElement.style.top = `${cursorPos.top}px`;
         }
 
         connect();
