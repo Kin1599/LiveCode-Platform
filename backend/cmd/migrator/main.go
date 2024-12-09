@@ -11,10 +11,11 @@ import (
 )
 
 func main() {
-	var dbUser, dbName, dbPass, migrationsPath string
+	var dbUser, dbName, dbHost, dbPass, migrationsPath string
 
 	flag.StringVar(&dbUser, "db-user", "", "database user")
 	flag.StringVar(&dbPass, "db-pass", "", "database password")
+	flag.StringVar(&dbHost, "db-host", "", "database host")
 	flag.StringVar(&dbName, "db-name", "", "database name")
 	flag.StringVar(&migrationsPath, "migrations-path", "", "path to migrations")
 	flag.Parse()
@@ -25,16 +26,22 @@ func main() {
 	if dbName == "" {
 		panic("db-name is required")
 	}
+
+	if dbHost == "" {
+		panic("db-host is required")
+	}
+
 	if dbPass == "" {
 		panic("db-pass is required")
 	}
+
 	if migrationsPath == "" {
 		panic("migrations-path is required")
 	}
 
 	m, err := migrate.New(
 		"file://"+migrationsPath,
-		fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", dbUser, dbPass, dbName),
+		fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", dbUser, dbPass, dbHost, dbName),
 	)
 	if err != nil {
 		panic(err)
