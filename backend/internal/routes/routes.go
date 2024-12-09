@@ -31,6 +31,7 @@ func SetupRouter() *gin.Engine {
 
 	router.POST("/api/session", handlers.CreateSession)
 	router.GET("/api/session", handlers.GetSession)
+	router.DELETE("/api/session", handlers.DeleteSession)
 	router.GET("/ws", func(ctx *gin.Context) {
 		websocket.WsHandler(ctx.Writer, ctx.Request)
 	})
