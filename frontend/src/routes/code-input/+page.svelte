@@ -59,9 +59,17 @@
     isSidebarVisible = !isSidebarVisible;
   }
 
+  async function getNickname(): Promise<string> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve("Стандартное Имя");
+      }, 1000);
+    });
+  }
+
   let ws: WebSocket; // WebSocket-соединение
-  const userId = generateUserId();
-  const userNickname = prompt("Введите ваше имя пользователя:") || "Гость";
+  let userId: string = generateUserId();
+  let userNickname: string = "";
   const userColor = generateColor();
 
   function generateUserId(): string {
@@ -117,7 +125,10 @@
     }
   }
 
-  connect();
+  getNickname().then((nickname) => {
+    userNickname = nickname;
+    connect(); // Подключение к WebSocket только после получения ника
+  });
 </script>
 
 <div class="container">
