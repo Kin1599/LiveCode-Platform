@@ -1,6 +1,12 @@
 <script>
   // @ts-nocheck
 
+  let templates = [
+    { name: "Python", author: "misplit", language: "python" },
+    { name: "Hello world!", author: "misplit", language: "python" },
+    { name: "Fibonachi", author: "misplit", language: "python" },
+  ];
+
   let folders = [
     { name: "Shared with me", type: "shared", files: [] },
     { name: "Unnamed (1)", type: "folder", files: [] },
@@ -44,6 +50,17 @@
    */
   function openFolder(folder) {
     openedFolder = folder;
+  }
+
+  function getLanguageIcon(language){
+    switch(language) {
+      case "python":
+        return "./images/python-icon.svg"
+      case "javascript":
+        return "./images/javascript-icon.svg"
+      case "golang":
+        return "./images/golang-icon.svg"
+    }
   }
 </script>
 
@@ -112,7 +129,7 @@
             ><img src="./images/icon-gitnub.svg" alt="" />Импортировать из
             GitHub</button
           >
-          <button class="create">+ Создать</button>
+          <button class="create" on:click={() => selectItem("create-repl")}>+ Создать</button>
         </div>
       </div>
 
@@ -173,6 +190,51 @@
     {:else if selected === "Настройки"}
       <h2>Настройки</h2>
       <p>Здесь будет контент для настроек...</p>
+    {:else if selected === "create-repl"}
+    <h2 class="create-title">Create a new Repl</h2>
+    <div class="create-container">
+      <div>
+        <h3 class="templates-title">Templates</h3>
+        <div class="search-container search-templates">
+          <img src="./images/icon-search.svg" alt="" />
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Search"
+          />
+        </div>
+        <ul class="template-list">
+          {#each templates as template}
+          <li class="template-item">
+            <img class="template-icon" src={getLanguageIcon(template.language)} alt={template.language}/>
+            <div class="template-info">
+              <p class="info-name">{template.name}</p>
+              <p class="info-author">{template.author}</p>
+            </div>
+          </li>
+          {/each}
+        </ul>
+      </div>
+      <div class="create-params">
+        <div class="create-input-label">
+          <p class="create-label">Title</p>
+          <input class="create-input" type="text" placeholder="Name">
+        </div>
+        <div class="params-public"> 
+          <p class="create-label">Public</p>
+          <div class="public-info">
+            <div class="public-info-icon">
+              <img src="./images/global.svg" alt="global">
+            </div>
+            <div class="public-info-text">
+              <p class="text-title">Private join link</p>
+              <p class="text-description">Anyone with this link can edit files</p>
+            </div>
+          </div>
+        </div>
+        <button class="createBtn">+ Создать</button>
+      </div>
+    </div>
     {/if}
   </main>
 
@@ -260,6 +322,11 @@
     border-radius: 10px;
   }
 
+  .search-templates {
+    margin: 0px;
+    width: 100%;
+  }
+
   .search-container:hover {
     border: 1px solid #ff7b00;
   }
@@ -274,6 +341,10 @@
 
   .search-input::placeholder {
     color: #7e7e7e;
+  }
+
+  .search-templates > input{
+    font-size: 20px;
   }
 
   .right-section {
@@ -519,5 +590,139 @@
   a {
     text-decoration: none;
     color: #fff;
+  }
+
+  /* Create REPL */
+
+  .create-title{
+    font-size: 48px;
+    font-weight: 600;
+    line-height: 56.25px;
+    margin-bottom: 30px;
+  }
+
+  .create-container{
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .templates-title{
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 23.44px;
+    margin-bottom: 22px;
+  }
+
+  .template-list{
+    margin-top: 5px;
+  }
+
+  .template-item{
+    background-color: #162832;
+    height: 60px;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .template-item:first-child{
+    border-radius: 5px 5px 0 0;
+  }
+
+  .template-item:last-child{
+    border-radius: 0 0 5px 5px;
+  }
+
+  .template-icon{
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+  }
+
+  .template-info{
+    background-color: transparent;
+  }
+
+  .template-info > *:not(:last-child){
+    margin-bottom: 2px;
+  }
+
+  .info-name{
+    font-size: 20px;
+    line-height: 23.44px;
+    background-color: transparent;
+  }
+
+  .info-author{
+    color: #7E7E7E;
+    background-color: transparent;
+  }
+
+  .create-input-label > *:not(:last-child){
+    margin-bottom: 22px;
+  }
+
+  .create-label{
+    font-size: 20px;
+    line-height: 23.44px;
+  }
+
+  .create-input{
+    background-color: #162832;
+    border-radius: 5px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #6A6A6A66;
+    font-size: 20px;
+  }
+
+  .params-public{
+    margin: 63px 0 130px 0;
+  }
+
+  .public-info{
+    margin-top: 29px;
+    display: flex;
+    align-items: center;
+    gap: 24px; 
+  }
+
+  .public-info-icon{
+    border-radius: 50%;
+    height: 66px;
+    width: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #162832;
+  }
+
+  .public-info-icon > img{
+    background-color: transparent;
+  }
+
+  .public-info-text > *:not(:last-child){
+    margin-bottom: 5px;
+  }
+
+  .public-info-text > .text-title{
+    color: #FFF;
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  .public-info-text > .text-description{
+    color: #7E7E7E;
+  }
+
+  .createBtn{
+    width: 100%;
+    background-color: #ff7b00;
+    border: none;
+    padding: 10px 15px;
+    font-size: 1.1rem;
   }
 </style>
