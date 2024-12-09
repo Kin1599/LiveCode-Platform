@@ -11,6 +11,7 @@ type Session struct {
 	IdOwner        uuid.UUID
 	Title           string
 	Language        string
+	AccessType 		string
 	ExpirationTime time.Time
 	MaxUsers       int64
 	IsEditable     bool

@@ -25,9 +25,9 @@ var (
 const (
 	saveNewUser    = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
 	getUserByEmail = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
-	saveNewSession = "INSERT INTO Sessions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
-	getSessionById = "SELECT * FROM Sessions WHERE id = $1"
-	deleteSession  = "DELETE FROM Sessions WHERE id = $1"
+	saveNewSession = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	getSessionById = "SELECT * FROM \"Sessions\" WHERE id = $1"
+	deleteSession  = "DELETE FROM \"Sessions\" WHERE id = $1"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -120,8 +120,8 @@ func (s *Storage) SaveSession(ctx context.Context,
 	timeNow := time.Now()
 
 	_, err = stmt.ExecContext(ctx, ID, ownerId,
-		title, lang, access, timeNow.Add(time.Hour*24),
-		maxUsers, isEditable, timeNow, timeNow, '1',
+		title, lang, "Public", timeNow.Add(time.Hour*24),
+		maxUsers, isEditable, timeNow, timeNow, 1,
 	)
 
 	if err != nil {
@@ -142,7 +142,8 @@ func (s *Storage) GetSessionById(ctx context.Context, sessionUUID uuid.UUID) (mo
 	row := stmt.QueryRowContext(ctx, sessionUUID)
 
 	var ssn models.Session
-	err = row.Scan(&ssn)
+	err = row.Scan(&ssn.ID, &ssn.IdOwner, &ssn.Title, &ssn.Language, &ssn.AccessType,
+		&ssn.ExpirationTime, &ssn.MaxUsers, &ssn.IsEditable, &ssn.CreatedAt, &ssn.UpdatedAt, &ssn.IsActive)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Session{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
