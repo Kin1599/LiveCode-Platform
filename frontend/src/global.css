@@ -1,6 +1,11 @@
-* { background-color:#0b1419; margin: 0; padding: 0;}
+* { margin: 0; padding: 0;}
 
-body {font-family: "Roboto", sans-serif; color: white;}
+body {
+    font-family: "Roboto", sans-serif; 
+    color: white; 
+    background-color:#0b1419;
+}
+
 html {
-     scroll-behavior: smooth;
- }
+    scroll-behavior: smooth;
+}

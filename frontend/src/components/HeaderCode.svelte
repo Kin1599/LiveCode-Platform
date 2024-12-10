@@ -37,13 +37,13 @@
         <button class="invite-button">
             <img src="./images/icon-invite.svg" alt="Invite Icon" />Пригласить
         </button>
-        <button>
+        <button class="active-button">
             <img src="./images/icon-plus.svg" alt="Add Icon" />
         </button>
-        <button>
+        <button class="active-button">
             <img src="./images/icon-noti.svg" alt="Notifications Icon" />
         </button>
-        <button>
+        <button class="active-button">
             <img src="./images/icon-more.svg" alt="More Options Icon" />
         </button>
         <div class="avatar"></div>
@@ -78,6 +78,7 @@
   }
 
   .icons button {
+    background-color: #0b1419;
     border-color: transparent;
     cursor: pointer;
   }
@@ -114,6 +115,7 @@
     outline: none;
     padding: 0.5rem;
     color: #ffffff;
+    background-color: #0b1419;
   }
 
   .search-input::placeholder {
@@ -131,6 +133,10 @@
     border-color: transparent;
     cursor: pointer;
     color: #ffffff;
+  }
+
+  .active-button{
+    background-color: #0b1419;
   }
 
   .run-button {

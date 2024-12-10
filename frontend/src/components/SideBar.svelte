@@ -43,11 +43,11 @@
 <div class="sidebar">
     <div class="sidebar-header">
         <h3>Files</h3>
-        <div>
-            <button on:click={createFile}
+        <div class="menu-btns">
+            <button class="active-button" on:click={createFile}
               ><img src="./images/icon-file-add.svg" alt="" /></button
             >
-            <button on:click={createFolder}
+            <button class="active-button" on:click={createFolder}
               ><img src="./images/icon-folder-add.svg" alt="" /></button
             >
             <button class="menu-button" on:click={toggleMenu}
@@ -117,9 +117,23 @@
         cursor: pointer;
     }
 
+    .menu-btns{
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .active-button{
+      background-color: #0B1419;
+    }
+
     .menu-button img {
         width: 15px;
         height: 15px;
+    }
+
+    .menu-button {
+      background-color: #0B1419;
     }
 
     .file-list {

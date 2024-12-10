@@ -300,6 +300,7 @@
   }
 
   .icons button {
+    background-color: #0b1419;
     border-color: transparent;
     cursor: pointer;
   }
@@ -337,6 +338,7 @@
     outline: none;
     padding: 0.5rem;
     color: #ffffff;
+    background-color: #0b1419;
   }
 
   .search-input::placeholder {
@@ -354,6 +356,7 @@
   }
 
   .right-section button {
+    background-color: #0b1419;
     border-color: transparent;
   }
 
