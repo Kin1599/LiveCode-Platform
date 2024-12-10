@@ -32,6 +32,7 @@ var (
 
 type UserProvider interface {
 	User(ctx context.Context, email string) (models.User, error)
+	UserPublicInfo(ctx context.Context, email string) (models.User, error)
 }
 
 func New(
@@ -95,7 +96,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (
 func (a *Auth) GetUserInfo(ctx context.Context, email string) (models.User, error) {
 	const op = "Auth.GetUserInfo"
 
-	userInfo, err := a.usrProvider.User(ctx, email)
+	userInfo, err := a.usrProvider.UserPublicInfo(ctx, email)
 	if err != nil {
 		if errors.Is(err, database.ErrUserNotFound) {
 			return models.User{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)

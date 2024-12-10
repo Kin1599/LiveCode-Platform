@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/net/context"
 )
 
@@ -89,7 +90,19 @@ func GetUserInfo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"UserInfo": userInfo})
+	var info struct {
+		ID uuid.UUID
+		Nickname string
+		Avatar string
+		Email string
+	}
+
+	info.ID = userInfo.ID
+	info.Nickname = userInfo.Nickname
+	info.Avatar = userInfo.Avatar
+	info.Email = userInfo.Email
+
+	c.JSON(http.StatusOK, gin.H{"UserInfo": info})
 }
 
 // Ping godoc
