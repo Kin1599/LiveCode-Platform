@@ -74,6 +74,24 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
+func GetUserInfo(c *gin.Context) {
+	email := c.PostForm("email")
+
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	ctx := context.Background()
+	userInfo, err := authService.GetUserInfo(ctx, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get info about user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"UserInfo": userInfo})
+}
+
 // Ping godoc
 // @Summary Проверка работы сервера
 // @Description Эндпоинт для проверки работы сервера

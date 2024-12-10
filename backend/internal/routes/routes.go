@@ -43,5 +43,7 @@ func SetupRouter() *gin.Engine {
 	router.POST("/api/uploadProject", handlers.UploadProject)
 	router.GET("/api/downloadProject", handlers.DownloadProject)
 
+	router.GET("/api/user", handlers.GetUserInfo)
+
 	return router
 }
