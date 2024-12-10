@@ -11,13 +11,14 @@ import (
 )
 
 func main() {
-	var dbUser, dbName, dbHost, dbPass, migrationsPath string
+	var dbUser, dbName, dbHost, dbPass, migrationsPath, direction string
 
 	flag.StringVar(&dbUser, "db-user", "", "database user")
 	flag.StringVar(&dbPass, "db-pass", "", "database password")
 	flag.StringVar(&dbHost, "db-host", "", "database host")
 	flag.StringVar(&dbName, "db-name", "", "database name")
 	flag.StringVar(&migrationsPath, "migrations-path", "", "path to migrations")
+	flag.StringVar(&direction, "direction", "up", "migration direction: up or down")
 	flag.Parse()
 
 	if dbUser == "" {
@@ -46,16 +47,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if err := m.Up(); err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			fmt.Println("no migrations to apply")
-			return
+
+	switch direction {
+	case "up":
+		if err := m.Up(); err != nil {
+			if errors.Is(err, migrate.ErrNoChange) {
+				fmt.Println("no migrations to apply")
+				return
+			}
+
+			panic(err)
 		}
 
-		panic(err)
+		fmt.Println("migrations applied")
+	case "down":
+		if err := m.Force(1); err != nil {
+			panic(err)
+		}
+
+		if err := m.Down(); err != nil {
+			if errors.Is(err, migrate.ErrNoChange) {
+				fmt.Println("no migrations to revert")
+				return
+			}
+		}
+
+		fmt.Println("migrations reverted")
+	default:
+		panic("invalid direction. Use 'up' or 'down'.")
 	}
 
-	fmt.Println("migrations applied")
 }
 
 // go run cmd/migrator/main.go --db-user="yourname" --db-pass="pass" --db-name="example" --db-host=localhost --migrations-path="./migrations"
