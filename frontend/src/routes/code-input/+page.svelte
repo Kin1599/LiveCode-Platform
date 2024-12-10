@@ -50,8 +50,13 @@
   let projectName = "the name of project";
   let lastModified = "5 days ago";
   let size = "203.57 MB";
-  let tabs = ["main.py", "script.js", "script.js", "script.js"];
+  let tabs = [
+    { id: 1, name: "main.py" },
+    { id: 2, name: "script.js" },
+    { id: 3, name: "index.html" },
+  ];
   let searchQuery: string = "";
+  let activeTab = tabs[0].id;
 
   let isSidebarVisible: boolean = true;
 
@@ -59,6 +64,10 @@
   function toggleSidebar(): void {
     isSidebarVisible = !isSidebarVisible;
   }
+
+  const handleTabClick = (event: CustomEvent<{ tabId: number }>) => {
+    activeTab = event.detail.tabId; 
+  };
 
   async function getNickname(): Promise<string> {
     return new Promise((resolve) => {
@@ -152,7 +161,7 @@
     </div>
     
     <div class="main">
-      <Tabs {tabs} />
+      <Tabs {tabs} {activeTab} onTabClick={handleTabClick} /> 
       <div class="code-input">
         <TextEditor bind:value />
       </div>
@@ -191,7 +200,6 @@
   /* основной блок */
   .main {
     flex: 1;
-    padding: 20px;
     background-color: #162832;
   }
 </style>
