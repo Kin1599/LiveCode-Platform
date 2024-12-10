@@ -1,4 +1,8 @@
 <script lang="ts">
+    import UserInvitations from "./UserInvitations.svelte";
+
+    let showInvitation = $state(true);
+
     let { 
         projectName = "Project Name",
         lastModified = "Last Modified",
@@ -6,6 +10,10 @@
         searchQuery = "",
         toggleSidebar = () => {}
     } = $props();
+
+    function toggleInvitation() {
+      showInvitation = !showInvitation;
+    }
 
 </script>
   
@@ -34,7 +42,7 @@
 
     <div class="right-section">
         <button class="run-button">Run</button>
-        <button class="invite-button">
+        <button class="invite-button" onclick={toggleInvitation}>
             <img src="./images/icon-invite.svg" alt="Invite Icon" />Пригласить
         </button>
         <button class="active-button">
@@ -48,6 +56,13 @@
         </button>
         <div class="avatar"></div>
     </div>
+    {#if showInvitation}
+      <div class="modal">
+        <div class="modal-content">
+          <UserInvitations />
+        </div>
+      </div>
+    {/if}
 </div>
 
 <style>
@@ -181,5 +196,17 @@
     height: 2.5rem;
     background-color: #444;
     border-radius: 50%;
+  }
+
+  .modal{
+    position: absolute;
+    background-color: #0b1419;
+    top: 85px;
+    right: 0;
+    z-index: 1;
+  }
+
+  .modal-content{
+    padding: 30px 25px;
   }
 </style>
