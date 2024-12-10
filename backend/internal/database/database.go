@@ -80,7 +80,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash string) (
 func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 	const op = "database.User"
 
-	stmt, err := s.db.Prepare(getUserByEmail)
+	stmt, err := s.db.Prepare(getUserPublicInfo)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
@@ -102,7 +102,7 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 }
 
 func (s *Storage) UserPublicInfo(ctx context.Context, email string) (models.User, error) {
-	const op = "database.User"
+	const op = "database.UserPublicInfo"
 
 	stmt, err := s.db.Prepare(getUserByEmail)
 	if err != nil {
