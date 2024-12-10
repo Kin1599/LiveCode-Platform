@@ -30,6 +30,7 @@ const (
 	deleteSession        = "DELETE FROM \"Sessions\" WHERE id = $1"
 	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
 	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
+	getUserPublicInfo    = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -88,6 +89,30 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 
 	var user models.User
 	err = row.Scan(&user.ID, &user.Email, &user.PasswordHash)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+		}
+
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, nil
+}
+
+func (s *Storage) UserPublicInfo(ctx context.Context, email string) (models.User, error) {
+	const op = "database.UserPublicInfo"
+
+	stmt, err := s.db.Prepare(getUserPublicInfo)
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	row := stmt.QueryRowContext(ctx, email)
+
+	var user models.User
+	err = row.Scan(&user.ID, &user.Nickname, &user.Avatar, &user.Email)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
