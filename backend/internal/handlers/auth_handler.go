@@ -75,7 +75,7 @@ func Login(c *gin.Context) {
 }
 
 func GetUserInfo(c *gin.Context) {
-	email := c.PostForm("email")
+	email := c.Query("email")
 
 	if email == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
