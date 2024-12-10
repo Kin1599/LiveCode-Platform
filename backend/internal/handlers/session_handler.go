@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"livecode/internal/models"
+	"livecode/internal/services/session"
 	"livecode/internal/utils"
 	"net/http"
 	"strconv"
@@ -14,6 +18,11 @@ import (
 
 var sessions = make(map[uuid.UUID]models.Session)
 var mutex = &sync.Mutex{}
+var sessionService *session.SessionService
+
+func InitSessionService(service *session.SessionService) {
+	sessionService = service
+}
 
 // CreateSession godoc
 // @Summary Создание новой сессии
@@ -39,6 +48,7 @@ func CreateSession(c *gin.Context) {
 
 	maxUsers, err := strconv.ParseInt(maxUsersStr, 10, 64)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid max_users value"})
 		return
 	}
@@ -66,6 +76,12 @@ func CreateSession(c *gin.Context) {
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 		IsActive:       true,
+	}
+
+	_, err = sessionService.CreateNewSession(context.Background(), sessionID, ownerUUID, title, language, "Public", maxUsers, editable)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	mutex.Lock()
@@ -98,14 +114,38 @@ func GetSession(c *gin.Context) {
 		return
 	}
 
-	mutex.Lock()
-	session, exists := sessions[sessionID]
-	mutex.Unlock()
+	// mutex.Lock()
+	// // _, _ = sessions[sessionID]
+	// mutex.Unlock()
 
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	sessionModel, err := sessionService.GetSession(context.Background(), sessionID)
+	if err != nil {
+		if errors.Is(err, session.ErrSessionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sessionModel)
+}
+
+func DeleteSession(c *gin.Context) {
+	sessionIDStr := c.Query("session_id")
+	sessionID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
 		return
 	}
 
-	c.JSON(http.StatusOK, session)
+	// mutex.Lock()
+	// // _, _ = sessions[sessionID]
+	// mutex.Unlock()
+
+	err = sessionService.DeleteSession(context.Background(), sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, "DELETED")
 }

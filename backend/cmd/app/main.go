@@ -33,13 +33,16 @@ func main() {
 
 	handlers.InitS3Client(s3Client)
 
+	sessionClient := app.NewSessionService(storagePath)
+	handlers.InitSessionService(sessionClient)
+
 	router := routes.SetupRouter()
 
 	go websocket.HandleMessages()
 	go chat.Run()
 
 	fmt.Println("Starting server on port 80")
-	err_server := router.Run(":80")
+	err_server := router.Run(":8080")
 	if err_server != nil {
 		fmt.Println("Error starting server:", err_server)
 	}

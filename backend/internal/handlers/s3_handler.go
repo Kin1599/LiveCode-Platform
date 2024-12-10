@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"livecode/internal/services/filestorage"
 	"net/http"
 
@@ -26,6 +27,7 @@ func InitS3Client(client *filestorage.S3Client) {
 // @Failure 500 {object} gin.H
 // @Router /api/uploadProject [post]
 func UploadProject(c *gin.Context) {
+	fmt.Println(c.Request.PostForm)
 	projectID := c.PostForm("project_id")
 	projectStructure := c.PostForm("project_structure")
 

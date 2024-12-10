@@ -58,4 +58,4 @@ func main() {
 	fmt.Println("migrations applied")
 }
 
-// go run cmd/migrator/main.go --db-user="yourname" --db-pass="pass" --db-name="example" --migrations-path="./migrations"
+// go run cmd/migrator/main.go --db-user="yourname" --db-pass="pass" --db-name="example" --db-host=localhost --migrations-path="./migrations"

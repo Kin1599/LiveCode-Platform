@@ -91,3 +91,18 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (
 
 	return userUUID, nil
 }
+
+func (a *Auth) GetUserInfo(ctx context.Context, email string) (models.User, error) {
+	const op = "Auth.GetUserInfo"
+
+	userInfo, err := a.usrProvider.User(ctx, email)
+	if err != nil {
+		if errors.Is(err, database.ErrUserNotFound) {
+			return models.User{}, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return userInfo, nil
+}
