@@ -23,11 +23,13 @@ var (
 )
 
 const (
-	saveNewUser    = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
-	getUserByEmail = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
-	saveNewSession = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-	getSessionById = "SELECT * FROM \"Sessions\" WHERE id = $1"
-	deleteSession  = "DELETE FROM \"Sessions\" WHERE id = $1"
+	saveNewUser          = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
+	getUserByEmail       = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
+	saveNewSession       = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	getSessionById       = "SELECT * FROM \"Sessions\" WHERE id = $1"
+	deleteSession        = "DELETE FROM \"Sessions\" WHERE id = $1"
+	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
+	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -57,8 +59,6 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash string) (
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	defer stmt.Close()
 
 	timeNow := time.Now()
 	newUUID := uuid.New()
@@ -115,8 +115,6 @@ func (s *Storage) SaveSession(ctx context.Context,
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	defer stmt.Close()
-
 	timeNow := time.Now()
 
 	_, err = stmt.ExecContext(ctx, ID, ownerId,
@@ -158,6 +156,45 @@ func (s *Storage) DeleteSessionById(ctx context.Context, sessionUUID uuid.UUID) 
 	const op = "database.GetSessionById"
 
 	stmt, err := s.db.Prepare(deleteSession)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.ExecContext(ctx, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) AddBlockedUser(ctx context.Context, blockedIp string, sessionUUID uuid.UUID) (uuid.UUID, error) {
+	const op = "database.AddBlockedUser"
+
+	stmt, err := s.db.Prepare(insertIp)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	newUUID := uuid.New()
+	_, err = stmt.ExecContext(ctx, newUUID, blockedIp, sessionUUID)
+
+	if err != nil {
+		pgErr, ok := err.(*pq.Error)
+		if ok && pgErr.Code == "23505" {
+			return uuid.Nil, fmt.Errorf("%s: %w", op, ErrUserExists)
+		}
+
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return newUUID, nil
+}
+
+func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID) error {
+	const op = "database.GetSessionById"
+
+	stmt, err := s.db.Prepare(deleteBlockBySession)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

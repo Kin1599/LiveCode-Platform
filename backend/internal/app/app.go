@@ -33,7 +33,7 @@ func NewSessionService(storagePath string) *session.SessionService {
 		panic(err)
 	}
 
-	sessionService := session.New(storage, storage)
+	sessionService := session.New(storage, storage, storage)
 
 	return sessionService
 }

@@ -4,5 +4,6 @@ DROP TABLE IF EXISTS "CodeSnippets";
 DROP TABLE IF EXISTS "Messages";
 DROP TABLE IF EXISTS "Comments";
 DROP TABLE IF EXISTS "SessionParticipants";
+DROP TABLE IF EXISTS "SessionBlock";
 DROP TABLE IF EXISTS "Sessions";
 DROP TABLE IF EXISTS "Users";

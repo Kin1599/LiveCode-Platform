@@ -17,6 +17,7 @@ var (
 type SessionService struct {
 	ssnUpdater  SessionUpdater
 	ssnProvider SessionProvider
+	usrBlocker  UserBlocker
 }
 
 type SessionUpdater interface {
@@ -36,13 +37,23 @@ type SessionProvider interface {
 		sessionUUID uuid.UUID) (models.Session, error)
 }
 
+type UserBlocker interface {
+	AddBlockedUser(ctx context.Context, blockedIp string,
+		sessionUUID uuid.UUID) (uuid.UUID, error)
+	DeleteAllBySession(ctx context.Context,
+		sessionUUID uuid.UUID) error
+}
+
 func New(
 	SessionSaver SessionUpdater,
 	SessionProv SessionProvider,
+	UserBlock UserBlocker,
+
 ) *SessionService {
 	return &SessionService{
 		ssnUpdater:  SessionSaver,
 		ssnProvider: SessionProv,
+		usrBlocker:  UserBlock,
 	}
 }
 
@@ -80,12 +91,30 @@ func (ssn *SessionService) GetSession(ctx context.Context, sessionUUID uuid.UUID
 }
 
 func (ssn *SessionService) DeleteSession(ctx context.Context, sessionUUID uuid.UUID) error {
-	const op = "Session.GetSession"
+	const op = "Session.DeleteSession"
 
-	err := ssn.ssnUpdater.DeleteSessionById(ctx, sessionUUID)
+	err := ssn.usrBlocker.DeleteAllBySession(ctx, sessionUUID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	err = ssn.ssnUpdater.DeleteSessionById(ctx, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	
+
 	return nil
+}
+
+func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sessionUUID uuid.UUID) (uuid.UUID, error) {
+	const op = "Session.BlockUser"
+
+	blockedUserUUID, err := ssn.usrBlocker.AddBlockedUser(ctx, blockedIp, sessionUUID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return blockedUserUUID, nil
 }
