@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"livecode/internal/database"
 	"livecode/internal/models"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -30,6 +31,7 @@ type SessionUpdater interface {
 		maxUsers int64,
 		isEditable bool) (uuid.UUID, error)
 	DeleteSessionById(ctx context.Context, sessionUUID uuid.UUID) error
+	DeleteExpiredSession(ctx context.Context) error
 }
 
 type SessionProvider interface {
@@ -50,11 +52,15 @@ func New(
 	UserBlock UserBlocker,
 
 ) *SessionService {
-	return &SessionService{
+	ssnService := &SessionService{
 		ssnUpdater:  SessionSaver,
 		ssnProvider: SessionProv,
 		usrBlocker:  UserBlock,
 	}
+	closeChan := make(chan struct{})
+	go ssnService.startExpirationChecker(closeChan, time.Hour*24)
+
+	return ssnService
 }
 
 func (ssn *SessionService) CreateNewSession(ctx context.Context,
@@ -103,8 +109,6 @@ func (ssn *SessionService) DeleteSession(ctx context.Context, sessionUUID uuid.U
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	
-
 	return nil
 }
 
@@ -117,4 +121,22 @@ func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sess
 	}
 
 	return blockedUserUUID, nil
+}
+
+func (ssn *SessionService) garbageCollector() {
+	err := ssn.ssnUpdater.DeleteExpiredSession(context.Background())
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (snn *SessionService) startExpirationChecker(closeChan chan struct{}, tm time.Duration) {
+	for {
+		select {
+		case <-closeChan:
+			return
+		case <-time.After(tm):
+			snn.garbageCollector()
+		}
+	}
 }

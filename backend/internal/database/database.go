@@ -30,6 +30,7 @@ const (
 	deleteSession        = "DELETE FROM \"Sessions\" WHERE id = $1"
 	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
 	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
+	deleteExpiredSession = "DELETE FROM \"Sessions\" WHERE expiration_time <= $1 RETURNING id"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -202,6 +203,37 @@ func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID)
 	_, err = stmt.ExecContext(ctx, sessionUUID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) DeleteExpiredSession(ctx context.Context) error {
+	const op = "database.DeleteExpiredSession"
+
+	stmt, err := s.db.Prepare(deleteExpiredSession)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.Query(time.Now())
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var recordID uuid.UUID
+
+		if err := rows.Scan(&recordID); err != nil {
+			return err
+		}
+
+		err = s.DeleteAllBySession(ctx, recordID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
