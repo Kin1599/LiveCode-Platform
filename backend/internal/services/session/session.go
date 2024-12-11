@@ -103,8 +103,6 @@ func (ssn *SessionService) DeleteSession(ctx context.Context, sessionUUID uuid.U
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	
-
 	return nil
 }
 
