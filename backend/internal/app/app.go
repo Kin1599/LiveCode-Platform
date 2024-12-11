@@ -29,13 +29,13 @@ func NewS3Storage(bucketName string) *filestorage.S3Service {
 	return s3Serve
 }
 
-func NewSessionService(storagePath string) *session.SessionService {
+func NewSessionService(storagePath string, s3Serve *filestorage.S3Service) *session.SessionService {
 	storage, err := database.New(storagePath)
 	if err != nil {
 		panic(err)
 	}
 
-	sessionService := session.New(storage, storage, storage)
+	sessionService := session.New(storage, storage, storage, s3Serve)
 
 	return sessionService
 }

@@ -19,7 +19,7 @@ CREATE TABLE "Sessions"(
     "title" VARCHAR(50) NULL,
     "language" VARCHAR(50) NOT NULL,
     "access_type" VARCHAR(255) CHECK("access_type" IN ('Public', 'Private')) NOT NULL DEFAULT 'Public',
-        "expiration_time" TIME(0) WITHOUT TIME ZONE NULL,
+        "expiration_time" TIMESTAMP(0) WITHOUT TIME ZONE NULL,
         "max_users" BIGINT NOT NULL DEFAULT '20',
         "is_editable" BOOLEAN NOT NULL DEFAULT '1',
         "created_at" TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,

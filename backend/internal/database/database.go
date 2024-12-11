@@ -208,34 +208,36 @@ func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID)
 	return nil
 }
 
-func (s *Storage) DeleteExpiredSession(ctx context.Context) error {
+func (s *Storage) DeleteExpiredSession(ctx context.Context) ([]uuid.UUID, error) {
 	const op = "database.DeleteExpiredSession"
 
 	stmt, err := s.db.Prepare(deleteExpiredSession)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	rows, err := stmt.Query(time.Now())
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	defer rows.Close()
+
+	deletedID := []uuid.UUID{}
 
 	for rows.Next() {
 		var recordID uuid.UUID
 
 		if err := rows.Scan(&recordID); err != nil {
-			return err
+			return nil, err
 		}
-
 		err = s.DeleteAllBySession(ctx, recordID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		fmt.Println(recordID)
+		deletedID = append(deletedID, recordID)
 	}
 
-	return nil
+	return deletedID, nil
 }

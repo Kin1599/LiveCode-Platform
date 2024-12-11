@@ -62,6 +62,7 @@ func (cli *S3Client) UploadProject(projectId string, projectStructure []byte) er
 	if err := json.Unmarshal(projectStructure, &mapStructure); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+	fmt.Println(mapStructure)
 	cli.wg.Add(1)
 	go cli.uploadByStructure(projectId, mapStructure)
 	return nil
@@ -177,4 +178,37 @@ func (d *S3Client) insertIntoStructure(root *map[string]interface{}, path string
 			current = &nextMap
 		}
 	}
+}
+
+func (s *S3Client) DeleteFolder(folderPath string) error {
+	input := &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucketName),
+		Prefix: aws.String(folderPath),
+	}
+
+	result, err := s.client.ListObjectsV2(context.Background(), input)
+	if err != nil {
+		return fmt.Errorf("failed to list objects: %v", err)
+	}
+
+	for _, item := range result.Contents {
+		s.wg.Add(1)
+
+		go func(key *string) {
+			defer s.wg.Done()
+			_, err := s.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
+				Bucket: aws.String(s.bucketName),
+				Key:    key,
+			})
+			if err != nil {
+				log.Printf("failed to delete object %s: %v", *key, err)
+			} else {
+				log.Printf("successfully deleted object %s", *key)
+			}
+		}(item.Key)
+	}
+
+	s.wg.Wait()
+
+	return nil
 }

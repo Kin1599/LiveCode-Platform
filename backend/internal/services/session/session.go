@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"livecode/internal/database"
 	"livecode/internal/models"
+	"livecode/internal/services/filestorage"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ type SessionService struct {
 	ssnUpdater  SessionUpdater
 	ssnProvider SessionProvider
 	usrBlocker  UserBlocker
+	s3Serve     *filestorage.S3Service
 }
 
 type SessionUpdater interface {
@@ -31,7 +33,7 @@ type SessionUpdater interface {
 		maxUsers int64,
 		isEditable bool) (uuid.UUID, error)
 	DeleteSessionById(ctx context.Context, sessionUUID uuid.UUID) error
-	DeleteExpiredSession(ctx context.Context) error
+	DeleteExpiredSession(ctx context.Context) ([]uuid.UUID, error)
 }
 
 type SessionProvider interface {
@@ -50,11 +52,13 @@ func New(
 	SessionSaver SessionUpdater,
 	SessionProv SessionProvider,
 	UserBlock UserBlocker,
+	s3Serv *filestorage.S3Service,
 ) *SessionService {
 	ssnService := &SessionService{
 		ssnUpdater:  SessionSaver,
 		ssnProvider: SessionProv,
 		usrBlocker:  UserBlock,
+		s3Serve:     s3Serv,
 	}
 	closeChan := make(chan struct{})
 	go ssnService.startExpirationChecker(closeChan, time.Hour*24)
@@ -123,7 +127,10 @@ func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sess
 }
 
 func (ssn *SessionService) garbageCollector() {
-	err := ssn.ssnUpdater.DeleteExpiredSession(context.Background())
+	rows, err := ssn.ssnUpdater.DeleteExpiredSession(context.Background())
+	for _, row := range rows {
+		ssn.s3Serve.DeleteProject(row.String())
+	}
 	if err != nil {
 		fmt.Println(err)
 	}

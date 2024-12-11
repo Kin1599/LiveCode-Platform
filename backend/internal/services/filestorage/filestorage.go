@@ -2,16 +2,7 @@ package filestorage
 
 import (
 	"fmt"
-	"sync"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
-
-type S3Client struct {
-	client     *s3.Client
-	bucketName string
-	wg         *sync.WaitGroup
-}
 
 type S3Service struct {
 	s3Uploader   StorageUploder
@@ -24,6 +15,7 @@ type StorageUploder interface {
 
 type StorageDownloader interface {
 	DownloadProject(projectName string) ([]byte, error)
+	DeleteFolder(folderPath string) error
 }
 
 func New(
@@ -54,4 +46,14 @@ func (s3Serv *S3Service) GetProject(projectId string) ([]byte, error) {
 	}
 
 	return prjStructure, nil
+}
+
+func (s3Serv *S3Service) DeleteProject(projectId string) error {
+	const op = "Services.FileStorage.DeleteProject"
+	err := s3Serv.s3Downloader.DeleteFolder(projectId)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
