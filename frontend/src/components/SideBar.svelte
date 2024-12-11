@@ -7,23 +7,52 @@
     export let folders: Folders = {};
     export let selectedFile: string = "";
     export let showMenu: boolean = false;
+    export let selectedFolder: string | null = null;
   
     const selectFile = (file: string) => {
       selectedFile = file;
+      selectedFolder = null;
     };
   
     const createFile = () => {
       const fileName = prompt("Введите имя файла:");
       if (fileName) {
-        files.push(fileName);
+        if (selectedFolder) {
+          // Если выбрана папка, добавляем файл в неё
+          if (!folders[selectedFolder].includes(fileName)) {
+            folders[selectedFolder] = [...folders[selectedFolder], fileName];
+            selectedFile = fileName; // Устанавливаем файл как выбранный
+          } else {
+            alert("Файл с таким именем уже существует в этой папке.");
+          }
+        } else {
+          // Если папка не выбрана, добавляем файл в общий список
+          if (!files.includes(fileName)) {
+            files = [...files, fileName];
+            selectedFile = fileName; // Устанавливаем файл как выбранный
+          } else {
+            alert("Файл с таким именем уже существует.");
+          }
+        }
       }
     };
   
     const createFolder = () => {
       const folderName = prompt("Введите имя папки:");
       if (folderName) {
-        folders[folderName] = [];
+        if (!folders[folderName]) {
+          folders[folderName] = []; // Инициализируем пустую папку
+          selectedFolder = folderName;
+        } else {
+          alert("Папка с таким именем уже существует.");
+        }
       }
+    };
+
+    // Выбор папки
+    const selectFolder = (folderName: string) => {
+      selectedFolder = selectedFolder === folderName ? null : folderName; // Переключение
+      selectedFile = ""; // Сброс выбора файла
     };
   
     const toggleMenu = () => {
@@ -76,21 +105,22 @@
         {/each}
   
         {#each Object.keys(folders) as folder}
-          <div class="folder">
-            {folder}
-            <ul class="folder-files">
-              {#each folders[folder] as file}
-                <li
-                  class:selected={selectedFile === file}
-                > <button on:click={() => selectFile(file)}>
-                  {file}
-                </button>
-                </li>
-              {/each}
-            </ul>
-          </div>
+          <li class="folder">
+            <div class:selected={selectedFolder === folder}>
+              <button on:click={() => selectFolder(folder)}><strong>{folder}</strong></button>
+            </div>
+            {#if selectedFolder === folder}
+              <ul class="folder-files">
+                {#each folders[folder] as file}
+                  <li class:selected={selectedFile === file}>
+                    <button on:click={() => selectFile(file)}>{file}</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </li>
         {/each}
-    </ul>
+      </ul>
 </div>
   
 <style>
