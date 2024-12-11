@@ -113,7 +113,7 @@
 
   .create {
     background-color: #ff7b00;
-    border: none;
+    border-style: solid;
     border-radius: 10px;
     color: #fff;
     font-size: 20px;
