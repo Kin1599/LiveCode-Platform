@@ -1,12 +1,14 @@
 <script>
-  export let searchQuery = "";
-  export let toggleVisibility;
+  let {
+    searchQuery = "",
+    toggleVisibility
+  } = $props();
 </script>
   
 <header class="header">
   <div class="left-section">
     <div class="icons">
-      <button on:click={toggleVisibility}><img src="./images/icon-sidebar.svg" alt="" /></button>
+      <button onclick={toggleVisibility}><img src="./images/icon-sidebar.svg" alt="" /></button>
     </div>
   </div>
 

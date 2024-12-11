@@ -54,4 +54,18 @@ export default class SendServer{
             throw error;
         }
     }
+
+    /**
+     * Выполняет запрос на получение информации о пользователе.
+     * @param {string} token - Токен пользователя.
+     * */
+    static async getUserInfo(token){
+        return await axios.get(baseUrl + '/user', {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        })
+            .then(response => response.data)
+            .catch(error => console.log('Error fetching user info', error));
+    }
 }

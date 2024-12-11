@@ -1,4 +1,6 @@
 <script>
+    import SendServer from "../api/api";
+
   // @ts-nocheck
 
   import CreateRepl from "../components/CreateRepl.svelte";
@@ -7,7 +9,8 @@
   import Repls from "../components/Repls.svelte";
   import Settings from "../components/Settings.svelte";
   import SideBarMain from "../components/SideBarMain.svelte";
-
+  import { onMount } from "svelte";
+  
   let templates = [
     { name: "Python", author: "misplit", language: "python" },
     { name: "Hello world!", author: "misplit", language: "python" },
@@ -32,7 +35,24 @@
   let searchQuery = ""; //для поиска
   let username = "username"; //для ника
 
+  /** @type {null | { name: string, type: string, files: Array<any> }} */
   let openedFolder = null;
+
+  async function fetchUserInfo() {
+    try {
+      const token = localStorage.getItem("token");
+      if (token){
+        const response = await SendServer.getUserInfo(token);
+        username = response.Nickname || "Guest";
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+  }
+
+  onMount(() => {
+    fetchUserInfo();
+  });
 
   function selectItem(item) {
     selected = item;
@@ -62,7 +82,7 @@
 </script>
 
 <div class="layout">
-  <HeaderMain {searchQuery} {toggleVisibility} {username} />
+  <HeaderMain {searchQuery} {toggleVisibility}/>
 
   <SideBarMain {selected} {selectItem} {showBlocks}/>
 
