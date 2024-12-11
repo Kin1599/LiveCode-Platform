@@ -68,9 +68,10 @@
         {#each files as file}
             <li
                 class:selected={selectedFile === file}
-                on:click={() => selectFile(file)}
-            >
-                {file}
+            > <button on:click={() => selectFile(file)}>
+              {file}
+            </button>
+                
             </li>
         {/each}
   
@@ -81,9 +82,9 @@
               {#each folders[folder] as file}
                 <li
                   class:selected={selectedFile === file}
-                  on:click={() => selectFile(file)}
-                >
+                > <button on:click={() => selectFile(file)}>
                   {file}
+                </button>
                 </li>
               {/each}
             </ul>
@@ -145,7 +146,6 @@
         padding: 8px;
         border-radius: 10px;
         cursor: pointer;
-        font-size: 1rem;
     }
 
     .file-list li:hover {
@@ -155,6 +155,14 @@
     .file-list li:active {
         background-color: #444;
         color: #ff7b00;
+    }
+
+    li button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
     }
   
     .folder {
