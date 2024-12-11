@@ -1,6 +1,10 @@
 <script>
     export let templates;
     export let getLanguageIcon;
+
+    export let createNewFolder;
+
+    let folderName = '';
 </script>
   
 <div class="create-container">
@@ -26,7 +30,11 @@
     <div class="create-params">
         <div class="create-input-label">
             <p class="create-label">Title</p>
-            <input class="create-input" type="text" placeholder="Name" />
+            <input class="create-input" type="text" placeholder="Name" bind:value={folderName}/>
+        </div>
+        <div class="create-input-label" style="margin-top: 3rem;">
+            <p class="create-label">Description</p>
+            <input class="create-input" type="text" placeholder="Bla-bla" />
         </div>
         <div class="params-public"> 
             <p class="create-label">Public</p>
@@ -40,7 +48,7 @@
                 </div>
             </div>
         </div>
-        <button class="createBtn">+ Создать</button>
+        <button class="createBtn" on:click={() => createNewFolder(folderName)}>+ Создать</button>
     </div>
 </div>
   
@@ -159,7 +167,7 @@
         padding-left: 10px;
         border: 1px solid #6A6A6A66;
         font-size: 20px;
-        color: #7E7E7E;
+        color: #EBEBEB;
         height: 44px;
     }
 
@@ -205,11 +213,19 @@
     .createBtn{
         width: 100%;
         background-color: #ff7b00;
-        border: none;
+        border-style: solid;
         border-radius: 10px;
         color: #fff;
         font-size: 20px;
         padding: 10px 15px;
         height: 55px;
+    }
+
+    .createBtn:hover {
+        background: transparent;
+        border-width: 2px;
+        border-color: #ff7b00;
+        color: #ff7b00;
+        cursor: pointer;
     }
 </style>
