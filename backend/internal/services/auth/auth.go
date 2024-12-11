@@ -24,6 +24,13 @@ type UserSaver interface {
 		email string,
 		password string,
 	) (userUUID uuid.UUID, err error)
+	ChangeUserInfo(
+		ctx context.Context,
+		newEmail string,
+		newNickname string,
+		newAvatar string,
+		newPassword string,
+	) error
 }
 
 var (
@@ -106,4 +113,26 @@ func (a *Auth) GetUserInfo(ctx context.Context, email string) (models.User, erro
 	}
 
 	return userInfo, nil
+}
+
+func (a *Auth) ChangeUser(
+	ctx context.Context,
+	newEmail string,
+	newNickname string,
+	newAvatar string,
+	newPassword string,
+) error {
+	const op = "Auth.ChangeUser"
+
+	passHash, err := GeneratePassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = a.usrSaver.ChangeUserInfo(ctx, newEmail, newNickname, newAvatar, passHash)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
