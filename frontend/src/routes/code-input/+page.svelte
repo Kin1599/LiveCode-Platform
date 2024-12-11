@@ -7,35 +7,13 @@
   let value: string = ""; //для codemirror
 
   type Folders = {
-    [key: string]: string[]; // Ключ — строка, значение — массив строк (файлов)
+    [key: string]: string[];
   };
 
-  let files: string[] = ["file.txt", "main.py"];
-  let folders: Folders = {}; // Инициализация папок
+  let files: string[] = ["main.py", "script.js", "index.html"];
+  let folders: Folders = {};
   let selectedFile: string = "main.py";
   let showMenu: boolean = false;
-
-  const selectFile = (file: any) => {
-    selectedFile = file;
-  };
-
-  const createFile = () => {
-    const fileName = prompt("Введите имя файла:");
-    if (fileName) {
-      files.push(fileName);
-    }
-  };
-
-  const createFolder = () => {
-    const folderName = prompt("Введите имя папки:");
-    if (folderName) {
-      folders[folderName] = []; // Создаем новую папку с пустым массивом файлов
-    }
-  };
-
-  const toggleMenu = () => {
-    showMenu = !showMenu;
-  };
 
   const closeMenu = () => {
     showMenu = false;
