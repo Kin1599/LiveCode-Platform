@@ -1,7 +1,7 @@
 <script lang="ts">
     import UserInvitations from "./UserInvitations.svelte";
 
-    let showInvitation = $state(true);
+    let showInvitation = $state(false);
 
     let { 
         projectName = "Project Name",
