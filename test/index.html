@@ -16,12 +16,24 @@
 <body>
     <h1>Live Code Editor</h1>
     <textarea id="codeEditor"></textarea>
+
+    <div>
+        <button id="createSessionButton">Create New Session</button>
+        <select id="sessionSelect">
+            <option value="">Select Session</option>
+        </select>
+        <input type="text" id="sessionInput" placeholder="Enter session ID">
+        <button id="joinSessionButton">Join Session</button>
+        <button id="copySessionButton">Copy Session ID</button>
+    </div>
+
     <div id="chat">
         <h2>Chat</h2>
         <input type="text" id="chatInput" placeholder="Type a message...">
-        <button id="chatButton" onclick="">Send</button>
+        <button id="chatButton">Send</button>
         <div id="messages"></div>
     </div>
+
     <script>
         let ws;
         const userId = generateUserId();
@@ -47,11 +59,19 @@
             return `#${Math.floor(Math.random()*16777215).toString(16)}`;
         }
 
-        function connect() {
-            ws = new WebSocket("ws://localhost:8080/ws");
+        function uuidv4() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function connect(sessionId) {
+            console.log("Connecting to WebSocket with session_id:", sessionId);
+            ws = new WebSocket(`ws://localhost:8080/ws?session_id=${sessionId}`);
 
             ws.onopen = function () {
-                console.log("Connected to WebSocket server");
+                console.log("Connected to WebSocket server with session_id:", sessionId);
                 ws.send(JSON.stringify({ type: "init", userId: userId, color: userColor, nickname: userNickname }));
             };
 
@@ -64,14 +84,13 @@
                     });
                 }
                 if (data.userId !== userId && data.type === "cursor") {
-                    console.log("Update cursor position", data);
                     updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
                 }
             };
 
             ws.onclose = function () {
                 console.log("WebSocket connection closed, retrying...");
-                setTimeout(connect, 1000); // Reconnect after 1 second
+                setTimeout(() => connect(sessionId), 1000); // Reconnect after 1 second
             };
 
             ws.onerror = function (error) {
@@ -89,7 +108,6 @@
                     userId: userId,
                     color: userColor
                 };
-                console.log("Sending message:", message);
                 ws.send(JSON.stringify(message));
             });
 
@@ -104,52 +122,6 @@
                     nickname: userNickname
                 };
                 ws.send(JSON.stringify(message));
-            });
-
-            // Chat functionality
-            const chat = new WebSocket("ws://localhost:8080/chat");
-
-            chat.onopen = function () {
-                console.log("Connected to WebSocket server");
-                chat.send(JSON.stringify({ type: "init", userId: userId, color: userColor }));
-            };
-
-            chat.onmessage = function (event) {
-                const data = JSON.parse(event.data);
-                console.log("Received message:", data);
-                if (data.userId !== userId && data.message.type === "chat-message") {
-                    const messages = document.getElementById("messages");
-                    const newMessage = document.createElement("div");
-                    newMessage.textContent = data.message.text;
-                    messages.appendChild(newMessage);
-                }
-            };
-
-            chat.onclose = function () {
-                console.log("WebSocket connection closed, retrying...");
-                setTimeout(connect, 1000); // Reconnect after 1 second
-            };
-
-            chat.onerror = function (error) {
-                console.error("WebSocket chat error:", error);
-            };
-
-            const submitButton = document.getElementById("chatButton");
-            const chatInput = document.getElementById("chatInput");
-
-            submitButton.addEventListener("click", function(event) {
-                if (chatInput.value === "") return;
-                const newMessage = {
-                    type: "chat-message",
-                    text: chatInput.value,
-                    from: "",
-                    to: "",
-                    userId: userId,
-                    color: userColor
-                };
-                console.log("Sending message:", newMessage);
-                chat.send(JSON.stringify({ message: newMessage }));
-                chatInput.value = "";
             });
         }
 
@@ -182,7 +154,52 @@
             cursorElement.style.top = `${cursorPos.top}px`;
         }
 
-        connect();
+        document.getElementById("createSessionButton").addEventListener("click", function () {
+            const sessionId = uuidv4();
+            const sessionSelect = document.getElementById("sessionSelect");
+            const option = document.createElement("option");
+            option.value = sessionId;
+            option.text = `Session ${sessionId}`;
+            sessionSelect.add(option);
+            sessionSelect.value = sessionId;
+            connect(sessionId);
+        });
+
+        document.getElementById("sessionSelect").addEventListener("change", function (event) {
+            const sessionId = event.target.value;
+            if (sessionId) {
+                connect(sessionId);
+            }
+        });
+
+        document.getElementById("joinSessionButton").addEventListener("click", function () {
+            const sessionId = document.getElementById("sessionInput").value;
+            if (sessionId) {
+                connect(sessionId);
+            }
+        });
+
+        document.getElementById("copySessionButton").addEventListener("click", function () {
+            const sessionSelect = document.getElementById("sessionSelect");
+            const sessionId = sessionSelect.value;
+            if (sessionId) {
+                navigator.clipboard.writeText(sessionId).then(function() {
+                    alert("Session ID copied to clipboard: " + sessionId);
+                }, function(err) {
+                    console.error("Failed to copy session ID: ", err);
+                });
+            }
+        });
+
+        // Initialize first connection
+        const initialSessionId = uuidv4();
+        const sessionSelect = document.getElementById("sessionSelect");
+        const initialOption = document.createElement("option");
+        initialOption.value = initialSessionId;
+        initialOption.text = `Session ${initialSessionId}`;
+        sessionSelect.add(initialOption);
+        sessionSelect.value = initialSessionId;
+        connect(initialSessionId);
     </script>
 </body>
 </html>
