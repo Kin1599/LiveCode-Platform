@@ -234,6 +234,7 @@ func (s *Storage) DeleteExpiredSession(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println(recordID)
 	}
 
 	return nil

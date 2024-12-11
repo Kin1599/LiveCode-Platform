@@ -18,13 +18,15 @@ func New(storagePath string) *auth.Auth {
 	return authService
 }
 
-func NewS3Storage(bucketName string) *filestorage.S3Client {
-	s3Client, err := filestorage.New(bucketName)
+func NewS3Storage(bucketName string) *filestorage.S3Service {
+	s3Client, err := database.NewS3Client(bucketName)
 	if err != nil {
 		panic(err)
 	}
 
-	return s3Client
+	s3Serve := filestorage.New(s3Client, s3Client)
+
+	return s3Serve
 }
 
 func NewSessionService(storagePath string) *session.SessionService {

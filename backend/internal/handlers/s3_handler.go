@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var s3Client *filestorage.S3Client
+var s3Service *filestorage.S3Service
 
-func InitS3Client(client *filestorage.S3Client) {
-	s3Client = client
+func InitS3Service(service *filestorage.S3Service) {
+	s3Service = service
 }
 
 // UploadProject godoc
@@ -31,7 +31,7 @@ func UploadProject(c *gin.Context) {
 	projectID := c.PostForm("project_id")
 	projectStructure := c.PostForm("project_structure")
 
-	if err := s3Client.UploadProject(projectID, []byte(projectStructure)); err != nil {
+	if err := s3Service.SaveNewProject(projectID, []byte(projectStructure)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -58,7 +58,7 @@ func DownloadProject(c *gin.Context) {
 		return
 	}
 
-	projectStructure, err := s3Client.DownloadProject(projectID)
+	projectStructure, err := s3Service.GetProject(projectID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -50,7 +50,6 @@ func New(
 	SessionSaver SessionUpdater,
 	SessionProv SessionProvider,
 	UserBlock UserBlocker,
-
 ) *SessionService {
 	ssnService := &SessionService{
 		ssnUpdater:  SessionSaver,
