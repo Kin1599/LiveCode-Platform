@@ -36,8 +36,8 @@
 
     <script>
         let ws;
-        const userId = generateUserId();
-        const userNickname = prompt("Введите ваше имя пользователя:");
+        let userId = generateUserId();
+        let userNickname = prompt("Введите ваше имя пользователя:");
         let userColor = generateColor();
 
         const editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
@@ -45,7 +45,6 @@
             lineNumbers: true
         });
 
-        // Set cursor color
         editor.getWrapperElement().style.setProperty("--cursor-color", userColor);
         const style = document.createElement("style");
         style.innerHTML = `.cm-cursor { border-left-color: ${userColor} !important; }`;
@@ -67,6 +66,15 @@
         }
 
         function connect(sessionId) {
+            if (ws) {
+                ws.onmessage = null;
+                ws.onclose = null;
+                ws.onerror = null;
+                ws.close();
+            }
+
+            clearCursors();
+
             console.log("Connecting to WebSocket with session_id:", sessionId);
             ws = new WebSocket(`ws://localhost:8080/ws?session_id=${sessionId}`);
 
@@ -77,6 +85,7 @@
 
             ws.onmessage = function (event) {
                 const data = JSON.parse(event.data);
+                if (data.userId === userId) return;
                 console.log("Received message:", data);
                 if (data.type === "history") {
                     data.history.forEach(msg => {
@@ -86,20 +95,18 @@
                             });
                         }
                     });
-                } else if (data.userId !== userId) {
-                    if (data.type === "update") {
-                        editor.operation(function () {
-                            editor.replaceRange(data.text, data.from, data.to, "server");
-                        });
-                    } else if (data.type === "cursor") {
-                        updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
-                    }
+                } else if (data.type === "update") {
+                    editor.operation(function () {
+                        editor.replaceRange(data.text, data.from, data.to, "server");
+                    });
+                } else if (data.type === "cursor") {
+                    updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
                 }
             };
 
             ws.onclose = function () {
                 console.log("WebSocket connection closed, retrying...");
-                setTimeout(() => connect(sessionId), 1000); // Reconnect after 1 second
+                setTimeout(() => connect(sessionId), 1000);
             };
 
             ws.onerror = function (error) {
@@ -132,6 +139,11 @@
                 };
                 ws.send(JSON.stringify(message));
             });
+        }
+
+        function clearCursors() {
+            const cursors = document.querySelectorAll("[id^='cursor-']");
+            cursors.forEach(cursor => cursor.remove());
         }
 
         function updateCursor(userId, x, y, color, nickname) {
@@ -200,7 +212,6 @@
             }
         });
 
-        // Initialize first connection
         const initialSessionId = uuidv4();
         const sessionSelect = document.getElementById("sessionSelect");
         const initialOption = document.createElement("option");

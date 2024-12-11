@@ -41,6 +41,7 @@ type Message struct {
 	Color     string          `json:"color"`
 	Nickname  string          `json:"nickname"`
 	SessionID string          `json:"sessionId"`
+	History   []Message       `json:"history,omitempty"`
 }
 
 func generateColor() string {
@@ -68,6 +69,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			clients:   make(map[*websocket.Conn]string),
 			colors:    make(map[string]string),
 			broadcast: make(chan Message),
+			history:   []Message{},
 		}
 		sessions[sessionID] = session
 
@@ -92,11 +94,14 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	session.clients[conn] = initialMessage.UserID
 	session.colors[initialMessage.UserID] = generateColor()
 
-	for _, msg := range session.history {
-		if err := conn.WriteJSON(msg); err != nil {
-			fmt.Println("Error sending history message: ", err)
-			return
-		}
+	historyMessage := Message{
+		Type:    "history",
+		History: session.history,
+	}
+
+	if err := conn.WriteJSON(historyMessage); err != nil {
+		fmt.Println("Error sending history message: ", err)
+		return
 	}
 
 	session.mutex.Unlock()
@@ -105,8 +110,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		var message Message
 		if err := conn.ReadJSON(&message); err != nil {
 			session.mutex.Lock()
+			userID := session.clients[conn]
+			delete(session.colors, userID)
 			delete(session.clients, conn)
-			delete(session.colors, session.clients[conn])
 			session.mutex.Unlock()
 			break
 		}
