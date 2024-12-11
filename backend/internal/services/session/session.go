@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrSessionNotFound = errors.New("session not found")
+	ErrSessionNotFound   = errors.New("session not found")
+	ErrTemplatenNotFound = errors.New("session not found")
 )
 
 type SessionService struct {
@@ -30,11 +31,15 @@ type SessionUpdater interface {
 		maxUsers int64,
 		isEditable bool) (uuid.UUID, error)
 	DeleteSessionById(ctx context.Context, sessionUUID uuid.UUID) error
+	SaveTemplate(ctx context.Context, templateName string,
+		lang string, template_code string, creatorID uuid.UUID) (uuid.UUID, error)
 }
 
 type SessionProvider interface {
 	GetSessionById(ctx context.Context,
 		sessionUUID uuid.UUID) (models.Session, error)
+	GetTemplateByID(ctx context.Context, templateUUID uuid.UUID) (models.Template, error)
+	GetAllTemplates(ctx context.Context) ([]models.Template, error)
 }
 
 type UserBlocker interface {
@@ -115,4 +120,41 @@ func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sess
 	}
 
 	return blockedUserUUID, nil
+}
+
+func (ssn *SessionService) TemplateByID(ctx context.Context, templateUUID uuid.UUID) (models.Template, error) {
+	const op = "Session.TemplateByID"
+
+	template, err := ssn.ssnProvider.GetTemplateByID(ctx, templateUUID)
+	if err != nil {
+		if errors.Is(err, database.ErrTemplateNotFound) {
+			return template, ErrTemplatenNotFound
+		}
+		return template, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return template, nil
+}
+
+func (ssn *SessionService) AllTemplates(ctx context.Context) ([]models.Template, error) {
+	const op = "Session.AllTemplates"
+
+	templates, err := ssn.ssnProvider.GetAllTemplates(ctx)
+	if err != nil {
+		return templates, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return templates, nil
+}
+
+func (ssn *SessionService) CreateTemplate(ctx context.Context, templateName string,
+	lang string, template_code string, creatorID uuid.UUID) (uuid.UUID, error) {
+	const op = "Session.CreateTemplate"
+
+	templateUUID, err := ssn.ssnUpdater.SaveTemplate(ctx, templateName, lang, template_code, creatorID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return templateUUID, nil
 }
