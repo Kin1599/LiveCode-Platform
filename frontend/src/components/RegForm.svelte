@@ -122,28 +122,5 @@
         background-color: #ff7b00;
         color: #ffffff;
     }
-  
-    .link {
-        margin-top: 0.5rem;
-        align-self: flex-start;
-    }
-  
-    .link a {
-        color: #ffffff;
-        text-decoration: none;
-    }
-  
-    .link a:hover {
-        color: #ff7b00;
-    }
-
-    .register{
-        text-align: left;
-    }
-
-    .register-link{
-        color: #ff7b00;
-        cursor: pointer;
-    }
 </style>
   

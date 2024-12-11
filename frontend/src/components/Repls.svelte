@@ -107,6 +107,10 @@
     cursor: pointer;
   }
 
+  .import:hover {
+    background-color: #7E7E7E;
+  }
+
   .create {
     background-color: #ff7b00;
     border: none;
@@ -115,6 +119,13 @@
     font-size: 20px;
     padding: 10px 15px;
     cursor: pointer;
+  }
+
+  .create:hover {
+    background: transparent;
+    border-width: 2px;
+    border-color: #ff7b00;
+    color: #ff7b00;
   }
 
   .new-folder {
@@ -134,6 +145,12 @@
     cursor: pointer;
   }
 
+
+  .new-folder:hover {
+    color: #7d3c00;
+    border: 2px solid #7d3c00;
+  }
+  
   .folder-list {
     display: flex;
     gap: 15px;

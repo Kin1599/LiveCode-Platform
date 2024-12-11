@@ -24,7 +24,6 @@
     <button><img src="./images/icon-plus.svg" alt="" /></button>
     <button><img src="./images/icon-noti.svg" alt="" /></button>
     <button><img src="./images/icon-more.svg" alt="" /></button>
-    <div class="avatar"></div>
   </div>
 </header>
   
@@ -104,12 +103,6 @@
   .right-section button {
     background-color: #0b1419;
     border-color: transparent;
-  }
-
-  .avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    background-color: #444;
-    border-radius: 50%;
+    cursor: pointer;
   }
 </style>
