@@ -7,28 +7,27 @@
 
     export let toggleLoginForm = () => {};
   
-    const handleLogin = async () => {
+    const handleRegister = async () => {
         message = "";
         try {
-            const response = await SendServer.login(email, password);
-            console.log(response);
+            const response = await SendServer.register(email, password);
             if (response.status === 200) {
                 localStorage.setItem("token", response.data.token);
-                message = "Успешный вход";
+                message = "Аккаунт успешно создан!";
                 window.location.assign("/#");
             } else {
-                message = "Ошибка при входе: " + response.statusText;
+                message = "Ошибка при регистрации: " + response.statusText;
             }
         } catch (error) {
-            console.error("Login error:", error);
-            message = "Произошла ошибка при входе";
+            console.error("Register error:", error);
+            message = "Произошла ошибка при регистрации, попробуйте ещё раз";
         }
     };
 </script>
   
 <form>
     <div class="form-widget">
-        <h2 class="header" style="margin-bottom: 0.5rem;">Войдите в аккаунт</h2>
+        <h2 class="header">Регистрация</h2>
         <div class="form-group">
             <input
                 required
@@ -49,16 +48,9 @@
                 bind:value={password}
             />
         </div>
-        <div>
-            <button type="button" on:click={handleLogin}>Войти</button>
-        </div>
-      
-        <div class="link">
-            <a href="/forgot-pass">Забыли пароль?</a>
-        </div>
-
-        <div class="register">
-            <div>Нет аккаунта? <span class="register-link" on:click={toggleLoginForm}>Зарегайтесь!</span></div>
+        <div class="actions">
+            <button type="button" on:click={handleRegister}>Создать аккаунт</button>
+            <button class="back-btn" type="button" on:click={toggleLoginForm}>Назад</button>
         </div>
   
         {#if message}
@@ -78,6 +70,12 @@
         width: 450px;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    .actions{
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
     }
   
     input {
@@ -103,9 +101,26 @@
   
     button:hover {
         background: transparent;
-        border-width: 2px;
-        border-color: #ff7b00;
+        border: 2px solid #ff7b00;
         color: #ff7b00;
+    }
+
+    .back-btn{
+        color: white;
+        background-color: transparent;
+        border: 2px solid #ff7b00;
+        color: #ff7b00;
+        width: 104%;
+        height: 3.5rem;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .back-btn:hover{
+        background-color: #ff7b00;
+        color: #ffffff;
     }
   
     .link {

@@ -12,8 +12,9 @@ export default class SendServer{
     }
 
     /**
-     * @param {string} email
-     * @param {any} password
+     * Выполняет вход пользователя.
+     * @param {string} email - Электронная почта пользователя.
+     * @param {string} password - Пароль пользователя.
      */
     static async login(email, password){
         try{
@@ -28,6 +29,28 @@ export default class SendServer{
             return response;
         } catch (error) {
             console.error('Error fetching login:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Выполняет регистрацию нового пользователя.
+     * @param {string} email - Электронная почта пользователя.
+     * @param {string} password - Пароль пользователя.
+     */
+    static async register(email, password){
+        try{
+            const response = await axios.post(baseUrl + '/register', {
+                email: email,
+                password: password
+            }, {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            });
+            return response;
+        } catch (error) {
+            console.error('Error fetching register:', error);
             throw error;
         }
     }
