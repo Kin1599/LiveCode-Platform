@@ -17,20 +17,24 @@ type Storage struct {
 }
 
 var (
-	ErrUserExists   = errors.New("user already exists")
-	ErrUserNotFound = errors.New("user not found")
-	ErrAppNotFound  = errors.New("app not found")
+	ErrUserExists       = errors.New("user already exists")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrAppNotFound      = errors.New("app not found")
+	ErrMessagesNotFound = errors.New("messages not found")
 )
 
 const (
-	saveNewUser          = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
-	getUserByEmail       = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
-	saveNewSession       = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-	getSessionById       = "SELECT * FROM \"Sessions\" WHERE id = $1"
-	deleteSession        = "DELETE FROM \"Sessions\" WHERE id = $1"
-	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
-	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
-	getUserPublicInfo    = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
+	saveNewUser                = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
+	getUserByEmail             = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
+	saveNewSession             = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	getSessionById             = "SELECT * FROM \"Sessions\" WHERE id = $1"
+	deleteSession              = "DELETE FROM \"Sessions\" WHERE id = $1"
+	insertIp                   = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
+	deleteBlockBySession       = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
+	getUserPublicInfo          = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
+	saveNewMessage             = "INSERT INTO \"Messages\" VALUES($1, $2, $3, $4, $5, $6)"
+	getMessagesBySsn           = "SELECT * FROM \"Messages\" WHERE id_session = $1"
+	deleteAllMessagesBySession = "DELETE FROM \"Messages\" WHERE id_session = $1"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -225,6 +229,76 @@ func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID)
 	}
 
 	_, err = stmt.ExecContext(ctx, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) SaveMessage(ctx context.Context, idSession uuid.UUID, idSessionParticipant uuid.UUID, message string) (uuid.UUID, error) {
+	const op = "database.SaveMessage"
+
+	stmt, err := s.db.Prepare(saveNewMessage)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	timeNow := time.Now()
+	ID := uuid.New()
+
+	_, err = stmt.ExecContext(ctx, ID, idSession,
+		idSessionParticipant, message, timeNow, timeNow, 1,
+	)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return ID, nil
+}
+
+func (s *Storage) GetAllMessagesBySession(ctx context.Context, idSession uuid.UUID) ([]models.Message, error) {
+	const op = "database.GetAllMessagesBySession"
+
+	stmt, err := s.db.Prepare(getMessagesBySsn)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.Query(idSession)
+	if err != nil {
+		defer rows.Close()
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, ErrMessagesNotFound)
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	messages := []models.Message{}
+
+	for rows.Next() {
+		var message models.Message
+
+		if err := rows.Scan(&message); err != nil {
+			return nil, err
+		}
+
+		messages = append(messages, message)
+	}
+
+	return messages, nil
+}
+
+func (s *Storage) DeleteAllMessagesBySession(ctx context.Context, idSession uuid.UUID) error {
+	const op = "database.DeleteAllMessagesBySession"
+
+	stmt, err := s.db.Prepare(deleteAllMessagesBySession)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.ExecContext(ctx, idSession)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

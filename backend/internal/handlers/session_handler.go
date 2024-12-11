@@ -149,3 +149,60 @@ func DeleteSession(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "DELETED")
 }
+
+func CreateMessage(c *gin.Context) {
+	sessionID := c.PostForm("id_session")
+	participantID := c.PostForm("participantID")
+	messageText := c.PostForm("message")
+
+	if messageText == "" {
+
+	}
+
+	sessionUUID, err := uuid.Parse(sessionID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id_session value"})
+		return
+	}
+
+	participantUUID, err := uuid.Parse(participantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid participantID value"})
+		return
+	}
+
+	newMessageID, err := sessionService.WriteMessage(context.Background(),
+		sessionUUID, participantUUID, messageText)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message_id": newMessageID.String(),
+	})
+}
+
+func GetAllMessagesInSession(c *gin.Context) {
+	sessionIDStr := c.Query("session_id")
+	sessionID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
+		return
+	}
+
+	// mutex.Lock()
+	// // _, _ = sessions[sessionID]
+	// mutex.Unlock()
+
+	sessionMessages, err := sessionService.GetMessagesBySession(context.Background(), sessionID)
+	if err != nil {
+		if errors.Is(err, session.ErrMessagesNotFound) {
+			c.JSON(http.StatusOK, gin.H{})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sessionMessages)
+}

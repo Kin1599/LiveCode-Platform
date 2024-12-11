@@ -45,5 +45,8 @@ func SetupRouter() *gin.Engine {
 
 	router.GET("/api/user", handlers.GetUserInfo)
 
+	router.GET("/api/message", handlers.GetAllMessagesInSession)
+	router.POST("/api/message", handlers.CreateMessage)
+
 	return router
 }

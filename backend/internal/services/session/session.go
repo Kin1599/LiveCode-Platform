@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrSessionNotFound = errors.New("session not found")
+	ErrSessionNotFound  = errors.New("session not found")
+	ErrMessagesNotFound = errors.New("messages not found")
 )
 
 type SessionService struct {
@@ -30,11 +31,14 @@ type SessionUpdater interface {
 		maxUsers int64,
 		isEditable bool) (uuid.UUID, error)
 	DeleteSessionById(ctx context.Context, sessionUUID uuid.UUID) error
+	SaveMessage(ctx context.Context, idSession uuid.UUID, idSessionParticipant uuid.UUID, message string) (uuid.UUID, error)
+	DeleteAllMessagesBySession(ctx context.Context, idSession uuid.UUID) error
 }
 
 type SessionProvider interface {
 	GetSessionById(ctx context.Context,
 		sessionUUID uuid.UUID) (models.Session, error)
+	GetAllMessagesBySession(ctx context.Context, idSession uuid.UUID) ([]models.Message, error)
 }
 
 type UserBlocker interface {
@@ -48,7 +52,6 @@ func New(
 	SessionSaver SessionUpdater,
 	SessionProv SessionProvider,
 	UserBlock UserBlocker,
-
 ) *SessionService {
 	return &SessionService{
 		ssnUpdater:  SessionSaver,
@@ -98,12 +101,15 @@ func (ssn *SessionService) DeleteSession(ctx context.Context, sessionUUID uuid.U
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	err = ssn.ssnUpdater.DeleteSessionById(ctx, sessionUUID)
+	err = ssn.ssnUpdater.DeleteAllMessagesBySession(ctx, sessionUUID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	
+	err = ssn.ssnUpdater.DeleteSessionById(ctx, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	return nil
 }
@@ -117,4 +123,29 @@ func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sess
 	}
 
 	return blockedUserUUID, nil
+}
+
+func (ssn *SessionService) WriteMessage(ctx context.Context, idSession uuid.UUID, idSessionParticipant uuid.UUID, message string) (uuid.UUID, error) {
+	const op = "Session.WriteMessage"
+
+	messageUUID, err := ssn.ssnUpdater.SaveMessage(ctx, idSession, idSessionParticipant, message)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return messageUUID, nil
+}
+
+func (ssn *SessionService) GetMessagesBySession(ctx context.Context, idSession uuid.UUID) ([]models.Message, error) {
+	const op = "Session.WriteMessage"
+
+	messages, err := ssn.ssnProvider.GetAllMessagesBySession(ctx, idSession)
+	if err != nil {
+		if errors.Is(err, database.ErrUserNotFound) {
+			return nil, ErrMessagesNotFound
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return messages, nil
 }
