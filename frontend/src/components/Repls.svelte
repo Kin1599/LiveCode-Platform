@@ -4,7 +4,7 @@
   type Folder = {
     name: string;
     type: string;
-    files: any[];  // Modify this to a more specific type if needed
+    files: any[];
   };
 
   export let folders: Folder[];
@@ -36,7 +36,7 @@
 </div>
 
 {#if !openedFolder}
-  <button class="new-folder" style="margin-bottom: 20px;">
+  <button class="new-folder" style="margin-bottom: 20px;"> 
     <img src="./images/icon-new-folder.svg" alt="" />Новая папка
   </button>
   <div class="folder-list">
@@ -113,7 +113,7 @@
 
   .create {
     background-color: #ff7b00;
-    border-style: solid;
+    border: none;
     border-radius: 10px;
     color: #fff;
     font-size: 20px;
