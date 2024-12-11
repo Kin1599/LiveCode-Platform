@@ -113,6 +113,10 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			userID := session.clients[conn]
 			delete(session.colors, userID)
 			delete(session.clients, conn)
+			session.broadcast <- Message{
+				Type:   "removeCursor",
+				UserID: session.clients[conn],
+			}
 			session.mutex.Unlock()
 			break
 		}
