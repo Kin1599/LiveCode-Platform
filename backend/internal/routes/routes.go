@@ -45,5 +45,9 @@ func SetupRouter() *gin.Engine {
 
 	router.GET("/api/user", handlers.GetUserInfo)
 
+	router.POST("/api/block", handlers.BlockIP)
+	router.POST("/api/unblock", handlers.UnblockIP)
+	router.GET("/api/blocked", handlers.GetBlockedIPs)
+
 	return router
 }

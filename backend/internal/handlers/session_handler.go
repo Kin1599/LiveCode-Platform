@@ -149,3 +149,106 @@ func DeleteSession(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "DELETED")
 }
+
+// BlockIP godoc
+// @Summary Блокировка IP
+// @Description Блокировка IP для сессии
+// @Tags session
+// @Accept json
+// @Produce json
+// @Param session_id query string true "ID сессии"
+// @Param ip query string true "IP для блокировки"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /api/block [post]
+func BlockIP(c *gin.Context) {
+	sessionIDStr := c.DefaultQuery("session_id", "")
+	ip := c.DefaultQuery("ip", "")
+
+	if sessionIDStr == "" || ip == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id and ip are required"})
+		return
+	}
+
+	sessionUUID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id"})
+		return
+	}
+
+	_, err = sessionService.BlockUser(context.Background(), ip, sessionUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IP blocked successfully"})
+}
+
+// UnblockIP godoc
+// @Summary Разблокировка IP
+// @Description Разблокировка IP для сессии
+// @Tags session
+// @Accept json
+// @Produce json
+// @Param session_id query string true "ID сессии"
+// @Param ip query string true "IP для разблокировки"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /api/unblock [post]
+func UnblockIP(c *gin.Context) {
+	sessionIDStr := c.DefaultQuery("session_id", "")
+	ip := c.DefaultQuery("ip", "")
+
+	if sessionIDStr == "" || ip == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id and ip are required"})
+		return
+	}
+
+	sessionUUID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id"})
+		return
+	}
+
+	err = sessionService.DeleteBlockByIP(context.Background(), ip, sessionUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IP unblocked successfully"})
+}
+
+// GetBlockedIPs godoc
+// @Summary Получить заблокированные IP для сессии
+// @Description Получить список заблокированных IP для сессии
+// @Tags session
+// @Accept json
+// @Produce json
+// @Param session_id query string true "ID сессии"
+// @Success 200 {object} []string
+// @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Router /api/blocked [get]
+func GetBlockedIPs(c *gin.Context) {
+	sessionIDStr := c.DefaultQuery("session_id", "")
+	if sessionIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
+		return
+	}
+
+	sessionUUID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id"})
+		return
+	}
+
+	blockedIPs, err := sessionService.GetBlockedIPsBySession(context.Background(), sessionUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, blockedIPs)
+}

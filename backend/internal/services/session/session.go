@@ -42,6 +42,10 @@ type UserBlocker interface {
 		sessionUUID uuid.UUID) (uuid.UUID, error)
 	DeleteAllBySession(ctx context.Context,
 		sessionUUID uuid.UUID) error
+	DeleteBlockByIP(ctx context.Context, blockedIp string,
+		sessionUUID uuid.UUID) error
+	GetBlockedIPsBySession(ctx context.Context,
+		sessionUUID uuid.UUID) ([]string, error)
 }
 
 func New(
@@ -103,8 +107,6 @@ func (ssn *SessionService) DeleteSession(ctx context.Context, sessionUUID uuid.U
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	
-
 	return nil
 }
 
@@ -117,4 +119,26 @@ func (ssn *SessionService) BlockUser(ctx context.Context, blockedIp string, sess
 	}
 
 	return blockedUserUUID, nil
+}
+
+func (ssn *SessionService) DeleteBlockByIP(ctx context.Context, blockedIp string, sessionUUID uuid.UUID) error {
+	const op = "Session.DeleteBlockByIP"
+
+	err := ssn.usrBlocker.DeleteBlockByIP(ctx, blockedIp, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (ssn *SessionService) GetBlockedIPsBySession(ctx context.Context, sessionUUID uuid.UUID) ([]string, error) {
+	const op = "Session.GetBlockedIPsBySession"
+
+	blockedIPs, err := ssn.usrBlocker.GetBlockedIPsBySession(ctx, sessionUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return blockedIPs, nil
 }

@@ -23,14 +23,16 @@ var (
 )
 
 const (
-	saveNewUser          = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
-	getUserByEmail       = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
-	saveNewSession       = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-	getSessionById       = "SELECT * FROM \"Sessions\" WHERE id = $1"
-	deleteSession        = "DELETE FROM \"Sessions\" WHERE id = $1"
-	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
-	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
-	getUserPublicInfo    = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
+	saveNewUser             = "INSERT INTO \"Users\"(id, email, avatar, password_hash, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6);"
+	getUserByEmail          = "SELECT id, email, password_hash FROM \"Users\" WHERE email = $1"
+	saveNewSession          = "INSERT INTO \"Sessions\" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	getSessionById          = "SELECT * FROM \"Sessions\" WHERE id = $1"
+	deleteSession           = "DELETE FROM \"Sessions\" WHERE id = $1"
+	insertIp                = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
+	deleteBlockBySession    = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
+	getUserPublicInfo       = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
+	getBlockedIPsForSession = "SELECT blocked_ip FROM \"SessionBlock\" WHERE session_id = $1"
+	deleteBlockByIP         = "DELETE FROM \"SessionBlock\" WHERE blocked_ip = $1 AND session_id = $2"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -225,6 +227,52 @@ func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID)
 	}
 
 	_, err = stmt.ExecContext(ctx, sessionUUID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) GetBlockedIPsBySession(ctx context.Context, sessionUUID uuid.UUID) ([]string, error) {
+	const op = "database.GetBlockedIPsBySession"
+
+	stmt, err := s.db.Prepare(getBlockedIPsForSession)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.QueryContext(ctx, sessionUUID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	var blockedIPs []string
+	for rows.Next() {
+		var ip string
+		if err := rows.Scan(&ip); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		blockedIPs = append(blockedIPs, ip)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return blockedIPs, nil
+}
+
+func (s *Storage) DeleteBlockByIP(ctx context.Context, ip string, sessionUUID uuid.UUID) error {
+	const op = "database.DeleteBlockByIP"
+
+	stmt, err := s.db.Prepare(deleteBlockByIP)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.ExecContext(ctx, ip, sessionUUID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

@@ -18,7 +18,6 @@ import (
 // @description LiveCode API
 // @host localhost:8080
 // @BasePath /api
-
 func main() {
 	cfg := config.MustLoad()
 	storagePath := config.ConStringFromCfg(cfg.StoragePath)
@@ -36,6 +35,7 @@ func main() {
 	sessionClient := app.NewSessionService(storagePath)
 	handlers.InitSessionService(sessionClient)
 
+	websocket.Init(sessionClient)
 	router := routes.SetupRouter()
 
 	go websocket.HandleMessages()

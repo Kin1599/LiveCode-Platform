@@ -91,10 +91,10 @@ func GetUserInfo(c *gin.Context) {
 	}
 
 	var info struct {
-		ID uuid.UUID
+		ID       uuid.UUID
 		Nickname string
-		Avatar string
-		Email string
+		Avatar   string
+		Email    string
 	}
 
 	info.ID = userInfo.ID

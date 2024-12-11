@@ -1,15 +1,21 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"livecode/internal/services/session"
 	"math/rand"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
+
+var sessionService *session.SessionService
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -41,6 +47,10 @@ func generateColor() string {
 	return fmt.Sprintf("#%02X%02X%02X", r.Intn(256), r.Intn(256), r.Intn(256))
 }
 
+func Init(sessionSvc *session.SessionService) {
+	sessionService = sessionSvc
+}
+
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -49,6 +59,34 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer conn.Close()
+
+	clientIP := r.RemoteAddr
+
+	sessionUUID := r.URL.Query().Get("session_id")
+	if sessionUUID == "" {
+		conn.WriteJSON(gin.H{"error": "session_id is required"})
+		return
+	}
+
+	sessionID, err := uuid.Parse(sessionUUID)
+	if err != nil {
+		conn.WriteJSON(gin.H{"error": "Invalid session_id"})
+		return
+	}
+
+	blockedIPs, err := sessionService.GetBlockedIPsBySession(context.Background(), sessionID)
+	if err != nil {
+		conn.WriteJSON(gin.H{"error": "Failed to check blocked IPs"})
+		return
+	}
+
+	for _, blockedIP := range blockedIPs {
+		if blockedIP == clientIP {
+			conn.WriteJSON(gin.H{"error": "Your IP is blocked in this session"})
+			conn.Close()
+			return
+		}
+	}
 
 	var initialMessage Message
 	if err := conn.ReadJSON(&initialMessage); err != nil {
