@@ -79,6 +79,22 @@
         return "./images/golang-icon.svg"
     }
   }
+
+
+  // для создания новой папки
+  function createNewFolder(name) {
+    let newFolderName = name || "Unnamed";
+    let folderExists = folders.some(folder => folder.name === newFolderName);
+    if (folderExists) {
+      let counter = 1;
+      while (folders.some(folder => folder.name === `${newFolderName} (${counter})`)) {
+        counter++;
+      }
+      newFolderName = `${newFolderName} (${counter})`;
+    }
+    folders.push({ name: newFolderName, type: "folder", files: [] });
+    openFolder({ name: newFolderName, type: "folder", files: [] });
+  }
 </script>
 
 <div class="layout">
@@ -96,7 +112,7 @@
     {:else if selected === "Настройки"}
       <Settings />
     {:else if selected === "create-repl"}
-      <CreateRepl {templates} {getLanguageIcon} />
+      <CreateRepl {templates} {getLanguageIcon} {createNewFolder}/>
     {/if}
   </main>
 
