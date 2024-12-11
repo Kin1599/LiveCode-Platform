@@ -78,13 +78,22 @@
             ws.onmessage = function (event) {
                 const data = JSON.parse(event.data);
                 console.log("Received message:", data);
-                if (data.userId !== userId && data.type === "update") {
-                    editor.operation(function () {
-                        editor.replaceRange(data.text, data.from, data.to, "server");
+                if (data.type === "history") {
+                    data.history.forEach(msg => {
+                        if (msg.type === "update") {
+                            editor.operation(function () {
+                                editor.replaceRange(msg.text, msg.from, msg.to, "server");
+                            });
+                        }
                     });
-                }
-                if (data.userId !== userId && data.type === "cursor") {
-                    updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
+                } else if (data.userId !== userId) {
+                    if (data.type === "update") {
+                        editor.operation(function () {
+                            editor.replaceRange(data.text, data.from, data.to, "server");
+                        });
+                    } else if (data.type === "cursor") {
+                        updateCursor(data.userId, data.cursorX, data.cursorY, data.color, data.nickname);
+                    }
                 }
             };
 
