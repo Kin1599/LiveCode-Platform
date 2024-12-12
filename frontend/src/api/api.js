@@ -1,3 +1,4 @@
+// @ts-nocheck
 import axios from "axios"
 import baseUrl from "../configs/config";
 
@@ -7,8 +8,8 @@ export default class SendServer{
     //* Функция для проверки на CORS
     static async getPing(){
         return await axios.get(baseUrl + '/ping')
-            .then(response => response.data)
-            .catch(error => console.log('Error fetching products', error));
+            .then((/** @type {{ data: any; }} */ response) => response.data)
+            .catch((/** @type {any} */ error) => console.log('Error fetching products', error));
     }
 
     /**
@@ -48,9 +49,15 @@ export default class SendServer{
                     "Content-Type": "application/x-www-form-urlencoded"
                 }
             });
-            return response;
+            if (registerResponse.status === 200) {
+                // После успешной регистрации выполняем логин
+                const loginResponse = await this.login(email, password);
+                return loginResponse.data; // Возвращаем данные сессии
+            } else {
+                throw new Error(`Registration failed: ${registerResponse.statusText}`);
+            }
         } catch (error) {
-            console.error('Error fetching register:', error);
+            console.error('Error during registration:', error);
             throw error;
         }
     }
