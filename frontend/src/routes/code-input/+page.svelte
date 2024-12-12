@@ -139,7 +139,7 @@
   });
 
   function connectChat(){
-    chatWs = new WebSocket(`ws://localhost:8080/chat?userId=${userId}`);
+    chatWs = new WebSocket(`ws://217.114.2.64/chat?userId=${userId}`);
 
     chatWs.onopen = () => {
       console.log("Websocket соединение для чата установлено");
