@@ -149,3 +149,55 @@ func DeleteSession(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "DELETED")
 }
+
+func GetTemplate(c *gin.Context) {
+	templateIDstr := c.Query("id")
+	templateID, err := uuid.Parse(templateIDstr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
+		return
+	}
+
+	template, err := sessionService.TemplateByID(context.Background(), templateID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, template)
+}
+
+func GetAllTemplates(c *gin.Context) {
+	templates, err := sessionService.AllTemplates(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, templates)
+}
+
+func CrateTemplate(c *gin.Context) {
+	templateName := c.PostForm("template_name")
+	language := c.PostForm("language")
+	templateCode := c.PostForm("template_code")
+	creatorUUIDStr := c.PostForm("creator_id")
+
+	creatorUUID, err := uuid.Parse(creatorUUIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid owner_id value"})
+		return
+	}
+
+	templatesUUID, err := sessionService.CreateTemplate(context.Background(), templateName,
+		language, templateCode, creatorUUID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"template_id": templatesUUID,
+	})
+}

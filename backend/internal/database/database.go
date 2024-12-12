@@ -20,6 +20,8 @@ var (
 	ErrUserExists   = errors.New("user already exists")
 	ErrUserNotFound = errors.New("user not found")
 	ErrAppNotFound  = errors.New("app not found")
+
+	ErrTemplateNotFound = errors.New("template not found")
 )
 
 const (
@@ -31,6 +33,13 @@ const (
 	insertIp             = "INSERT INTO \"SessionBlock\" VALUES($1, $2, $3)"
 	deleteBlockBySession = "DELETE FROM \"SessionBlock\" WHERE session_id = $1"
 	getUserPublicInfo    = "SELECT id, nickname, avatar, email FROM \"Users\" WHERE email = $1"
+	getAllTemplates      = "SELECT id, name, language, template_code, created_by FROM \"Templates\""
+	getTempleByID        = "SELECT id, name, language, template_code, created_by FROM \"Templates\" WHERE id = $1"
+	saveNewTemplate      = "INSERT INTO \"Templates\" VALUES($1, $2, $3, $4, $5, $6, $7)"
+	updateUserEmail      = "UPDATE \"Users\" SET email = $1 WHERE id = $2"
+	updateUserNickname  = "UPDATE \"Users\" SET nickname = $1 WHERE id = $2"
+	updateUserAvatar     = "UPDATE \"Users\" SET avatar = $1 WHERE id = $2"
+	updateUserPassword  = "UPDATE \"Users\" SET password_hash = $1 WHERE id = $2"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -99,6 +108,61 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *Storage) ChangeUserInfo(ctx context.Context, newEmail string, newNickname string,
+	 newAvatar string, newPassword string) error {
+	const op = "database.ChangeUserInfo"
+
+	if newEmail != "" {
+		stmt, err := s.db.Prepare(updateUserEmail)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		_, err = stmt.ExecContext(ctx, newEmail)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	if newNickname != "" {
+		stmt, err := s.db.Prepare(updateUserNickname)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		_, err = stmt.ExecContext(ctx, newNickname)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	if newAvatar != "" {
+		stmt, err := s.db.Prepare(updateUserAvatar)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		_, err = stmt.ExecContext(ctx, newAvatar)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	if newPassword != "" {
+		stmt, err := s.db.Prepare(updateUserPassword)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+
+		_, err = stmt.ExecContext(ctx, newPassword)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	return nil
 }
 
 func (s *Storage) UserPublicInfo(ctx context.Context, email string) (models.User, error) {
@@ -230,4 +294,80 @@ func (s *Storage) DeleteAllBySession(ctx context.Context, sessionUUID uuid.UUID)
 	}
 
 	return nil
+}
+
+func (s *Storage) GetAllTemplates(ctx context.Context) ([]models.Template, error) {
+	const op = "database.GetAllTemplates"
+
+	stmt, err := s.db.Prepare(getAllTemplates)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		defer rows.Close()
+		if errors.Is(err, sql.ErrNoRows) {
+			return []models.Template{}, nil
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	templates := []models.Template{}
+
+	for rows.Next() {
+		var template models.Template
+
+		if err := rows.Scan(&template.ID, &template.Name, &template.Language, &template.TemplateCode, &template.CreatedBy); err != nil {
+			return nil, err
+		}
+		templates = append(templates, template)
+	}
+
+	return templates, nil
+}
+
+func (s *Storage) GetTemplateByID(ctx context.Context, templateUUID uuid.UUID) (models.Template, error) {
+	const op = "database.GetTemplateByID"
+
+	stmt, err := s.db.Prepare(getTempleByID)
+	if err != nil {
+		return models.Template{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	row := stmt.QueryRowContext(ctx, templateUUID)
+
+	var template models.Template
+	err = row.Scan(&template.ID, &template.Name, &template.Language, &template.TemplateCode, &template.CreatedBy)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Template{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+		}
+
+		return models.Template{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return template, nil
+}
+
+func (s *Storage) SaveTemplate(ctx context.Context, templateName string,
+	lang string, template_code string, creatorID uuid.UUID) (uuid.UUID, error) {
+	const op = "database.SaveTemplate"
+
+	stmt, err := s.db.Prepare(saveNewTemplate)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	newUUID := uuid.New()
+	timeNow := time.Now()
+	_, err = stmt.ExecContext(ctx, newUUID, templateName, lang, template_code, creatorID, timeNow, timeNow)
+
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return newUUID, nil
 }

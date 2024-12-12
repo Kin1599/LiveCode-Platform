@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"livecode/internal/services/auth"
+	"livecode/internal/services/jwt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -76,25 +79,26 @@ func Login(c *gin.Context) {
 }
 
 func GetUserInfo(c *gin.Context) {
-	email := c.Query("email")
+	token := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
 
-	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	userModel, err := jwt.ValidateToken(token)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
 		return
 	}
 
 	ctx := context.Background()
-	userInfo, err := authService.GetUserInfo(ctx, email)
+	userInfo, err := authService.GetUserInfo(ctx, userModel.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get info about user"})
 		return
 	}
 
 	var info struct {
-		ID uuid.UUID
+		ID       uuid.UUID
 		Nickname string
-		Avatar string
-		Email string
+		Avatar   string
+		Email    string
 	}
 
 	info.ID = userInfo.ID
@@ -103,6 +107,23 @@ func GetUserInfo(c *gin.Context) {
 	info.Email = userInfo.Email
 
 	c.JSON(http.StatusOK, gin.H{"UserInfo": info})
+}
+
+func ChangeUserInfo(c *gin.Context) {
+	newEmail := c.PostForm("email")
+	newNickname := c.PostForm("nickname")
+	newAvatar := c.PostForm("avatar")
+	password := c.PostForm("password")
+
+	ctx := context.Background()
+	err := authService.ChangeUser(ctx, newEmail, newNickname, newAvatar, password)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to change user: %w", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, "Changed")
 }
 
 // Ping godoc
