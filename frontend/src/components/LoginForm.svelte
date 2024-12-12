@@ -13,7 +13,8 @@
             const response = await SendServer.login(email, password);
             console.log(response);
             if (response.status === 200) {
-                localStorage.setItem("token", response.data.token);
+                localStorage.setItem("token", response.data.accessToken);
+                localStorage.setItem("refreshToken", response.data.refreshToken);
                 message = "Успешный вход";
                 window.location.assign("/#");
             } else {

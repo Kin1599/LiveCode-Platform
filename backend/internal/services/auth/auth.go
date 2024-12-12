@@ -56,32 +56,37 @@ func (a *Auth) Login(
 	ctx context.Context,
 	email string,
 	password string,
-) (string, error) {
+) (string, string, error) {
 	const op = "Auth.Login"
 
+	// Получение пользователя
 	user, err := a.usrProvider.User(ctx, email)
 	if err != nil {
 		if errors.Is(err, database.ErrUserNotFound) {
-			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+			return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
-
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
+	// Проверка пароля
 	if ok, err := ComparePassword(password, user.PasswordHash); !ok || err != nil {
-
-		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
-	token, err := jwt.NewToken(user, time.Duration(60400))
+	// Генерация accessToken
+	accessToken, err := jwt.NewToken(user, time.Hour) // accessToken действителен 1 час
 	if err != nil {
-
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	return token, nil
-}
+	// Генерация refreshToken
+	refreshToken, err := jwt.NewRefreshToken(user)
+	if err != nil {
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
 
+	return accessToken, refreshToken, nil
+}
 func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (uuid.UUID, error) {
 	const op = "Auth.RegisterNewUser"
 

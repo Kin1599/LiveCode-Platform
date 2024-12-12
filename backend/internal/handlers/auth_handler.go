@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"livecode/internal/services/auth"
 	"livecode/internal/services/jwt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -69,31 +71,67 @@ func Login(c *gin.Context) {
 	}
 
 	ctx := context.Background()
-	token, err := authService.Login(ctx, email, password)
+	accessToken, refreshToken, err := authService.Login(ctx, email, password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login user"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"accessToken": accessToken, "refreshToken": refreshToken})
 }
 
-func GetUserInfo(c *gin.Context) {
-	token := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
-
-	userModel, err := jwt.ValidateToken(token)
+func RefreshToken(c *gin.Context) {
+	refreshToken := c.PostForm("refresh_token")
+	userModel, err := jwt.ValidateToken(refreshToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid refresh token"})
 		return
 	}
 
+	accessToken, err := jwt.NewToken(userModel, time.Hour*1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"accessToken": accessToken})
+}
+
+func GetUserInfo(c *gin.Context) {
+	// Извлечение токена из заголовка Authorization
+	authHeader := c.Request.Header.Get("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is missing"})
+		return
+	}
+
+	// Разделение заголовка на тип и токен
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+		return
+	}
+
+	token := parts[1]
+
+	// Валидация токена
+	userModel, err := jwt.ValidateToken(token)
+	if err != nil {
+		log.Printf("Failed to validate token: %v", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Получение информации о пользователе
 	ctx := context.Background()
 	userInfo, err := authService.GetUserInfo(ctx, userModel.Email)
 	if err != nil {
+		log.Printf("Failed to get user info: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get info about user"})
 		return
 	}
 
+	// Формирование ответа
 	var info struct {
 		ID       uuid.UUID
 		Nickname string
@@ -119,7 +157,7 @@ func ChangeUserInfo(c *gin.Context) {
 	err := authService.ChangeUser(ctx, newEmail, newNickname, newAvatar, password)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to change user: %w", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("failed to change user: %w", err)})
 		return
 	}
 

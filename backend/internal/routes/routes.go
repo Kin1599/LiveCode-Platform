@@ -44,6 +44,7 @@ func SetupRouter() *gin.Engine {
 	router.GET("/api/downloadProject", handlers.DownloadProject)
 
 	router.GET("/api/user", handlers.GetUserInfo)
+	router.POST("/api/refresh-token", handlers.RefreshToken)
 
 	return router
 }

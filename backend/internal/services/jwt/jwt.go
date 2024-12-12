@@ -3,6 +3,7 @@ package jwt
 import (
 	"fmt"
 	"livecode/internal/models"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -44,13 +45,44 @@ func ValidateToken(tokenString string) (models.User, error) {
 		return []byte(hmacSecret), nil
 	})
 
-	var authUser models.User
-
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		authUser.ID = uuid.MustParse(claims.UID)
-		authUser.Email = claims.Email
-		return authUser, nil
-	} else {
-		return models.User{}, err
+	// Проверка ошибки парсинга
+	if err != nil {
+		log.Printf("Error parsing token: %v", err)
+		return models.User{}, fmt.Errorf("failed to parse token: %w", err)
 	}
+
+	// Проверка валидности токена
+	if !token.Valid {
+		return models.User{}, fmt.Errorf("invalid token")
+	}
+
+	// Извлечение claims
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return models.User{}, fmt.Errorf("invalid claims")
+	}
+
+	var authUser models.User
+	authUser.ID = uuid.MustParse(claims.UID)
+	authUser.Email = claims.Email
+	return authUser, nil
+}
+
+func NewRefreshToken(user models.User) (string, error) {
+	// Создание claims для refreshToken
+	claims := jwt.MapClaims{
+		"uid": user.ID.String(),
+		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(), // refreshToken действителен 7 дней
+	}
+
+	// Создание токена
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Подпись токена
+	tokenString, err := token.SignedString([]byte(hmacSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign refresh token: %w", err)
+	}
+
+	return tokenString, nil
 }

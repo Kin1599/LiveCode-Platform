@@ -58,14 +58,51 @@ export default class SendServer{
     /**
      * Выполняет запрос на получение информации о пользователе.
      * @param {string} token - Токен пользователя.
+     * @returns {Promise<{ ID: string, Nickname: string, Avatar: string, Email: string }>} - Информация о пользователе.
      * */
     static async getUserInfo(token){
-        return await axios.get(baseUrl + '/user', {
-            headers: {
-                "Authorization": "Bearer " + token
+        try{
+            const response = await axios.get(baseUrl + '/user', {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            return response.data.UserInfo;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Error fetching user info:', error);
+                if (error.response && error.response.status === 401 ) {
+                    const refreshToken = localStorage.getItem('refreshToken');
+                    if (refreshToken) {
+                        const newToken = await this.refreshToken(refreshToken);
+                        if (newToken) {
+                            localStorage.setItem("token", newToken);
+                            return this.getUserInfo(newToken);
+                        }
+                    } else {
+                        console.error('Refresh token is missing');
+                        throw new Error('Refresh token is missing');
+                    }
+                }
             }
-        })
-            .then(response => response.data)
-            .catch(error => console.log('Error fetching user info', error));
+            throw error;
+        }
+    }
+
+    /**
+     * Выполняет запрос на обновление токена.
+     * @param {string} refreshToken - Токен пользователя.
+     * */
+    static async refreshToken(refreshToken) {
+        try {
+            const response = await axios.post(baseUrl + '/refresh-token', {
+                refreshToken: refreshToken
+            });
+            return response.data.accessToken;
+        } catch (error) {
+            console.error('Error fetching refresh token:', error);
+            throw error;
+        }
     }
 }
