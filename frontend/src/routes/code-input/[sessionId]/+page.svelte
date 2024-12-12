@@ -6,7 +6,7 @@
   import ChatWindow from "../../../components/ChatWindow.svelte";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
-    import SendServer from "../../../api/api";
+  import SendServer from "../../../api/api";
 
   $: sessionId = $page.params.sessionId;
 

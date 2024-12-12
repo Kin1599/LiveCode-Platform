@@ -1,10 +1,44 @@
-<script>
-    export let templates;
-    export let getLanguageIcon;
+<script lang="ts">
 
-    export let createNewFolder;
+    interface SessionData{
+        owner_id: string;
+        editable: boolean;
+        title: string;
+        language: string;
+        max_users: number;
+    }
 
-    let folderName = '';
+    interface Template {
+        name: string;
+        author: string;
+        language: string;
+    }
+
+    type GetLanguageIcon = (language: string) => string;
+    type CreateNewSession = (sessionData: SessionData) => void;
+
+    export let templates: Template[] = [];
+    export let getLanguageIcon: GetLanguageIcon;
+    export let owner_id: string = "";
+    export let createNewSession: CreateNewSession = (sessionData) => {};
+
+    let replsName = '';
+    let editable = true;
+    let language = '';
+    let maxUsers = 1;
+
+    function handleCreateRepl(){
+        if (replsName) {
+            const sessionData = {
+                owner_id: owner_id,
+                editable: editable,
+                title: replsName,
+                language: 'python',
+                max_users: maxUsers,
+            }
+            createNewSession(sessionData);
+        }
+    }
 </script>
   
 <div class="create-container">
@@ -30,13 +64,13 @@
     <div class="create-params">
         <div class="create-input-label">
             <p class="create-label">Title</p>
-            <input class="create-input" type="text" placeholder="Name" bind:value={folderName}/>
+            <input class="create-input" type="text" placeholder="Name" bind:value={replsName}/>
         </div>
         <div class="create-input-label" style="margin-top: 3rem;">
-            <p class="create-label">Description</p>
-            <input class="create-input" type="text" placeholder="Bla-bla" />
+            <p class="create-label">Max Users</p>
+            <input class="create-input" type="text" placeholder="Max users" bind:value={maxUsers} />
         </div>
-        <div class="params-public"> 
+        <!-- <div class="params-public"> 
             <p class="create-label">Public</p>
             <div class="public-info">
                 <div class="public-info-icon">
@@ -47,8 +81,15 @@
                     <p class="text-description">Anyone with this link can edit files</p>
                 </div>
             </div>
+        </div> -->
+        <div class="params-editable">
+            <p class="create-label">Editable</p>
+            <label class="toggle-switch">
+                <input class="toggle-checkbox" type="checkbox" bind:checked={editable}>
+                <span class="slider"></span>
+            </label>
         </div>
-        <button class="createBtn" on:click={() => createNewFolder(folderName)}>+ Создать</button>
+        <button class="createBtn" on:click={handleCreateRepl}>+ Создать</button>
     </div>
 </div>
   
@@ -208,6 +249,64 @@
   
     .public-info-text > .text-description{
         color: #7E7E7E;
+    }
+
+    .toggle-switch{
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    .toggle-checkbox:checked + .slider {
+        background-color: #ff7b00;
+    }
+
+    .toggle-checkbox:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .params-editable {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .create-label {
+        font-size: 20px;
+        line-height: 23.44px;
     }
   
     .createBtn{

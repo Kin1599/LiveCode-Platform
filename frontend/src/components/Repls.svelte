@@ -12,6 +12,7 @@
   export let repls: number;
   export let openFolder: (folder: Folder) => void;
   export let selectItem: (item: string) => void;
+  export let createNewFolder: (name: string) => void;
 </script>
     
 <div class="main-header">
@@ -36,7 +37,7 @@
 </div>
 
 {#if !openedFolder}
-  <button class="new-folder" style="margin-bottom: 20px;"> 
+  <button class="new-folder" on:click={() => createNewFolder("Unnamed")} style="margin-bottom: 20px;"> 
     <img src="./images/icon-new-folder.svg" alt="" />Новая папка
   </button>
   <div class="folder-list">

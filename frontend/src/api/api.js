@@ -123,6 +123,10 @@ export default class SendServer{
                 title: sessionData.title,
                 language: sessionData.language,
                 max_users: sessionData.max_users
+            }, {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
             });
             return response.data;
         } catch (error) {
