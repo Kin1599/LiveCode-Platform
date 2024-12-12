@@ -4,7 +4,7 @@
 
 <div class="user-item">
     <div class="user-info">
-        <img src={user.avatar ? user.avatar : "./images/avatar.png"} alt="avatar">
+        <img src={user.avatar ? user.avatar : "../images/avatar.png"} alt="avatar">
         <p>{user.name}</p>
     </div>
     <div class="user-actions">
@@ -14,7 +14,7 @@
             <option value="viewer">viewer</option>
         </select>
         <button class="action-delete">
-            <img src="./images/delete.svg" alt="delete">
+            <img src="../images/delete.svg" alt="delete">
         </button>
     </div>
 </div>

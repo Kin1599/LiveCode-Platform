@@ -74,13 +74,13 @@
         <h3>Files</h3>
         <div class="menu-btns">
             <button class="active-button" on:click={createFile}
-              ><img src="./images/icon-file-add.svg" alt="" /></button
+              ><img src="../images/icon-file-add.svg" alt="" /></button
             >
             <button class="active-button" on:click={createFolder}
-              ><img src="./images/icon-folder-add.svg" alt="" /></button
+              ><img src="../images/icon-folder-add.svg" alt="" /></button
             >
             <button class="menu-button" on:click={toggleMenu}
-              ><img src="./images/3-poits.svg" alt="" /></button
+              ><img src="../images/3-poits.svg" alt="" /></button
             >
             {#if showMenu}
               <!-- svelte-ignore a11y_no_static_element_interactions -->

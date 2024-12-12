@@ -1,9 +1,14 @@
 <script lang="ts">
-  import HeaderCode from "../../components/HeaderCode.svelte";
-  import TextEditor from "../../components/CodeWindow.svelte";
-  import SideBar from "../../components/SideBar.svelte";
-  import Tabs from "../../components/Tabs.svelte";
-  import ChatWindow from "../../components/ChatWindow.svelte";
+  import HeaderCode from "../../../components/HeaderCode.svelte";
+  import TextEditor from "../../../components/CodeWindow.svelte";
+  import SideBar from "../../../components/SideBar.svelte";
+  import Tabs from "../../../components/Tabs.svelte";
+  import ChatWindow from "../../../components/ChatWindow.svelte";
+  import { page } from "$app/stores";
+  import { onMount } from "svelte";
+    import SendServer from "../../../api/api";
+
+  $: sessionId = $page.params.sessionId;
 
   let value: string = ""; //для codemirror
   let messages: { user: string, text: string }[] = []; 
@@ -29,6 +34,7 @@
 
   // для верхнего меню
   let projectName = "the name of project";
+  let language = "python";
   let lastModified = "5 days ago";
   let size = "203.57 MB";
   let tabs = [
@@ -52,6 +58,24 @@
   let searchQuery: string = "";
 
   let isSidebarVisible: boolean = true;
+
+  async function getSessionInfo(sessionId: string) {
+    try {
+      const response = await SendServer.getSessionInfo(sessionId);
+      console.log(response);
+      if (response) {
+        projectName = response.Title;
+        language = response.Language;
+        lastModified = response.CreatedAt;
+      } 
+    } catch (error) {
+      console.error("Error fetching session info:", error);
+    }
+  }
+
+  onMount(() => {
+    getSessionInfo(sessionId);
+  });
 
   // для переключения состояния видимости бокового блока
   function toggleSidebar(): void {
@@ -88,10 +112,10 @@
   }
 
   function connect() {
-    ws = new WebSocket("ws://217.114.2.64/ws");
+    ws = new WebSocket(`ws://217.114.2.64/ws?session_id=${sessionId}`);
 
     ws.onopen = () => {
-      console.log("WebSocket соединение установлено");
+      console.log("Connected to WebSocket server with session_id:", sessionId);
       ws.send(
         JSON.stringify({
           type: "init",

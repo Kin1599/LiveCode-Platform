@@ -9,7 +9,7 @@
         { name: 'User3', role: 'Viewer' },
     ];
 
-    let inviteLink = "https://example.com/invite/1234";
+    let inviteLink = window.location.href;
 
     function invite() {
         console.log(`Inviting ${emailOrUsername}`);
@@ -44,7 +44,7 @@
         <div class="invite-link-header">
             <div class="invite-global">
                 <div class="invite-global-icon">
-                    <img src="./images/global.svg" alt="global">
+                    <img src="../images/global.svg" alt="global">
                 </div>
                 <div class="invite-global-text">
                     <p class="text-title">Private join link</p>
@@ -59,7 +59,7 @@
         <div class="invite-link-body">
             <input class="invite-input" type="text" bind:value={inviteLink} placeholder="https://misplitблабла"/>
             <button class="copy-button" on:click={copyToClipboard}>
-                <img src="./images/link.svg" alt="copy">
+                <img src="../images/link.svg" alt="copy">
                 <p>Copy join link</p>
             </button>
         </div>
@@ -110,6 +110,7 @@
         font-size: 20px;
         padding: 15px 46px;
         border: none;
+        cursor: pointer;
     }
 
     .user-list{

@@ -21,9 +21,9 @@
     <div class="left-section">
         <div class="icons">
             <button onclick={() => toggleSidebar()} >
-                <img src="./images/icon-sidebar.svg" alt="Toggle Sidebar" />
+                <img src="../images/icon-sidebar.svg" alt="Toggle Sidebar" />
             </button>
-            <a href="/#"><img src="./images/icon-home.svg" alt="Home" /></a>
+            <a href="/#"><img src="../images/icon-home.svg" alt="Home" /></a>
         </div>
         <div style="margin-left: 1.3rem;">{projectName}</div>
         <div class="prj-settings">{lastModified}</div>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="search-container">
-        <img src="./images/icon-search.svg" alt="Search Icon" />
+        <img src="../images/icon-search.svg" alt="Search Icon" />
         <input
             class="search-input"
             type="text"
@@ -43,16 +43,16 @@
     <div class="right-section">
         <button class="run-button">Run</button>
         <button class="invite-button" onclick={toggleInvitation}>
-            <img src="./images/icon-invite.svg" alt="Invite Icon" />Пригласить
+            <img src="../images/icon-invite.svg" alt="Invite Icon" />Пригласить
         </button>
         <button class="active-button">
-            <img src="./images/icon-plus.svg" alt="Add Icon" />
+            <img src="../images/icon-plus.svg" alt="Add Icon" />
         </button>
         <button class="active-button">
-            <img src="./images/icon-noti.svg" alt="Notifications Icon" />
+            <img src="../images/icon-noti.svg" alt="Notifications Icon" />
         </button>
         <button class="active-button">
-            <img src="./images/icon-more.svg" alt="More Options Icon" />
+            <img src="../images/icon-more.svg" alt="More Options Icon" />
         </button>
         <div class="avatar"></div>
     </div>

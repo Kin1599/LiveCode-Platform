@@ -35,7 +35,9 @@
             placeholder="Sent message" 
             on:keydown={handleKeyDown}
         />
-        <button class="send-button" on:click={handleSendMessage}><img src="./images/send.svg" alt="send"></button>
+        <button class="send-button" on:click={handleSendMessage}>
+            <img src="../images/send.svg" alt="send">
+        </button>
     </div>
 </div>
   
