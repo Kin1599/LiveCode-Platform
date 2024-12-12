@@ -51,7 +51,7 @@
   styles={{
       "&": {
         maxWidth: "100%",
-        height: "49.5rem",
+        height: "52.5rem",
       },
   }}
 />
