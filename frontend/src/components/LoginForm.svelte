@@ -1,5 +1,5 @@
 <script>
-    import SendServer from "../api/api";
+    import SendServer from "../api/api.js";
   
     let email = "";
     let password = "";
