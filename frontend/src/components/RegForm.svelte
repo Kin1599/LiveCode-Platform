@@ -10,14 +10,17 @@
     const handleRegister = async () => {
         message = "";
         try {
-            const response = await SendServer.register(email, password);
-            if (response.status === 200) {
-                localStorage.setItem("token", response.data.token);
-                message = "Аккаунт успешно создан!";
-                window.location.assign("/#");
-            } else {
-                message = "Ошибка при регистрации: " + response.statusText;
-            }
+            const sessionData = await SendServer.register(email, password);
+
+            localStorage.setItem("token", sessionData.token);
+
+            const userInfo = await SendServer.getUserInfo(sessionData.token);
+
+            localStorage.setItem("user", JSON.stringify(userInfo));
+
+            message = `Добро пожаловать, ${userInfo.Nickname}!`;
+
+            window.location.assign("/#");
         } catch (error) {
             console.error("Register error:", error);
             message = "Произошла ошибка при регистрации, попробуйте ещё раз";
