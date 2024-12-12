@@ -8,6 +8,7 @@ Team Members:
 4. **Виктория Сучкова** – Frontend developer
 
 Презентация: [тык](https://drive.google.com/drive/folders/1uUtPJNK5ln2FtZSZvMjoy7bGfDDM9ShQ?usp=sharing)
+Сервис: [тык](http://217.114.2.64:3000/#)
 
 ## Проект `"Платформа для лайвкодинга"`
 
