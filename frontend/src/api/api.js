@@ -105,4 +105,44 @@ export default class SendServer{
             throw error;
         }
     }
+
+    /**
+     * Выполняет запрос на создание сессии.
+     * @param {Object } sessionData - Данные сессии.
+     * @param {string} sessionData.owner_id - Идентификатор владельца сессии.
+     * @param {boolean} sessionData.editable - Флаг, указывающий, можно ли редактировать сессию.
+     * @param {string} sessionData.title - Заголовок сессии.
+     * @param {string} sessionData.language - Язык сессии.
+     * @param {number} sessionData.max_users - Максимальное количество пользователей в сессии.
+     */
+    static async createSession(sessionData){
+        try {
+            const response = await axios.post(baseUrl + '/session', {
+                owner_id: sessionData.owner_id,
+                editable: sessionData.editable,
+                title: sessionData.title,
+                language: sessionData.language,
+                max_users: sessionData.max_users
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching create session:', error);
+            throw error;
+        }
+    }
+
+
+    /**
+     *  Выполняет запрос на получение информации о сессии.
+     * @param {string} sessionId - Идентификатор сессии.
+     */
+    static async getSessionInfo(sessionId) {
+        return await axios.get(baseUrl + '/session', {
+            params: {
+                session_id: sessionId,
+            }
+        })
+            .then(response => response.data)
+            .catch(error => console.log('Error fetching session info', error));
+    }
 }
