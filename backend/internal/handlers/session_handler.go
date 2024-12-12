@@ -90,7 +90,7 @@ func CreateSession(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"session_id": sessionID.String(),
-		"url":        "/session/" + sessionID.String(),
+		"url":        "/code-input/" + sessionID.String(),
 	})
 }
 
