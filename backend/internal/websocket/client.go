@@ -1,10 +1,14 @@
-package chat
+package websocket
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,16 +28,28 @@ const (
 
 var (
 	newline = []byte{'\n'}
-	space   = []byte{' '}
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		// origin := r.Header.Get("Origin")
-		// return origin == "http://localhost:3000"
-		return true
-	},
+type ChatSession struct {
+	clients   map[*websocket.Conn]string
+	colors    map[string]string
+	broadcast chan Message
+	mutex     sync.Mutex
+	history   []Message
 }
+
+type ChatMessage struct {
+	Type      string          `json:"type"`
+	Text      string          `json:"text"`
+	From      json.RawMessage `json:"from"`
+	To        json.RawMessage `json:"to"`
+	UserID    string          `json:"userId"`
+	Nickname  string          `json:"nickname"`
+	SessionID string          `json:"sessionId"`
+	History   []ChatMessage   `json:"history,omitempty"`
+}
+
+var chatSessions = make(map[uuid.UUID]*ChatSession)
 
 // Client represents the websocket client at the server
 type Client struct {
@@ -47,7 +63,6 @@ func newClient(conn *websocket.Conn) *Client {
 		conn: conn,
 		send: make(chan []byte, 256),
 	}
-
 }
 
 func (client *Client) readPump() {
@@ -71,7 +86,6 @@ func (client *Client) readPump() {
 
 		broadcast <- jsonMessage
 	}
-
 }
 
 func (client *Client) writePump() {
@@ -123,6 +137,31 @@ func (client *Client) disconnect() {
 
 // ServeWs handles websocket requests from clients requests.
 func ServeWs(w http.ResponseWriter, r *http.Request) {
+	sessionIDStr := r.URL.Query().Get("session_id")
+	if sessionIDStr == "" {
+		http.Error(w, "session_id is required", http.StatusBadRequest)
+		fmt.Println("session_id is required")
+		return
+	}
+
+	sessionID, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		http.Error(w, "Invalid session_id value", http.StatusBadRequest)
+		return
+	}
+
+	chatSession, ok := chatSessions[sessionID]
+	if !ok {
+		chatSession = &ChatSession{
+			clients:   make(map[*websocket.Conn]string),
+			colors:    make(map[string]string),
+			broadcast: make(chan Message),
+			history:   []Message{},
+		}
+		chatSessions[sessionID] = chatSession
+
+		go chatSession.HandleMessages()
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -130,12 +169,50 @@ func ServeWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer conn.Close()
+
+	var initialMessage ChatMessage
+	if err := conn.ReadJSON(&initialMessage); err != nil {
+		fmt.Println("Error reading initial message:", err)
+		return
+	}
+
+	chatSession.mutex.Lock()
+	chatSession.clients[conn] = initialMessage.UserID
+	chatSession.colors[initialMessage.UserID] = generateColor()
+
+	historyMessage := Message{
+		Type:    "history",
+		History: chatSession.history,
+	}
+
+	if err := conn.WriteJSON(historyMessage); err != nil {
+		fmt.Println("Error sending history message: ", err)
+		return
+	}
+
+	chatSession.mutex.Unlock()
+
 	client := newClient(conn)
 
 	go client.writePump()
 	go client.readPump()
 
 	register <- client
+}
 
-	
+func (chatSsn *ChatSession) HandleMessages() {
+	message := <-chatSsn.broadcast
+
+	chatSsn.mutex.Lock()
+	for client, userID := range chatSsn.clients {
+		if userID != message.UserID {
+			err := client.WriteJSON(message)
+			if err != nil {
+				client.Close()
+				delete(chatSsn.clients, client)
+			}
+		}
+	}
+	chatSsn.mutex.Unlock()
 }
