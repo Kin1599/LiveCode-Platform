@@ -20,34 +20,38 @@ func InitAuthService(service *auth.Auth) {
 	authService = service
 }
 
+type UserCredentials struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 // Register godoc
 // @Summary Регистрация пользователя
 // @Description Регистрация нового пользователя
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param user body struct{Email string; Password string} true "User data"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param user body UserCredentials true "User registration details"
+// @Success 200 {object} RegisterResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/register [post]
 func Register(c *gin.Context) {
-	email := c.PostForm("email")
-	password := c.PostForm("password")
+	var creds UserCredentials
 
-	if email == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := c.ShouldBindJSON(&creds); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
 	ctx := context.Background()
-	userUUID, err := authService.RegisterNewUser(ctx, email, password)
+	userUUID, err := authService.RegisterNewUser(ctx, creds.Email, creds.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user_id": userUUID})
+	c.JSON(http.StatusOK, RegisterResponse{UserID: userUUID.String()})
 }
 
 // Login godoc
@@ -56,28 +60,32 @@ func Register(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param user body struct{Email string; Password string} true "User data"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param user body UserCredentials true "Login credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/login [post]
 func Login(c *gin.Context) {
-	email := c.PostForm("email")
-	password := c.PostForm("password")
+	var creds UserCredentials
 
-	if email == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := c.ShouldBindJSON(&creds); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request"})
+		return
+	}
+
+	if creds.Email == "" || creds.Password == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request"})
 		return
 	}
 
 	ctx := context.Background()
-	accessToken, refreshToken, err := authService.Login(ctx, email, password)
+	accessToken, refreshToken, err := authService.Login(ctx, creds.Email, creds.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login user"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to login user"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"accessToken": accessToken, "refreshToken": refreshToken})
+	c.JSON(http.StatusOK, LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken})
 }
 
 func RefreshToken(c *gin.Context) {

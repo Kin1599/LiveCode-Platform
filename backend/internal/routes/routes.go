@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRouter() *gin.Engine {
@@ -25,25 +27,39 @@ func SetupRouter() *gin.Engine {
 
 	router.GET("/api/ping", handlers.Ping)
 
-	router.POST("/api/register", handlers.Register)
-	router.POST("/api/login", handlers.Login)
+	authRoutes := router.Group("/api")
+	{
+		authRoutes.POST("/register", handlers.Register)
+		authRoutes.POST("/login", handlers.Login)
+		authRoutes.GET("/user", handlers.GetUserInfo)
+		authRoutes.POST("/refresh-token", handlers.RefreshToken)
+	}
 
-	router.POST("/api/session", handlers.CreateSession)
-	router.GET("/api/session", handlers.GetSession)
-	router.DELETE("/api/session", handlers.DeleteSession)
-	router.GET("/ws", func(ctx *gin.Context) {
-		websocket.WsHandler(ctx.Writer, ctx.Request)
-	})
+	sessionRoutes := router.Group("/api/session")
+	{
+		sessionRoutes.POST("", handlers.CreateSession)
+		sessionRoutes.GET("", handlers.GetSession)
+		sessionRoutes.DELETE("", handlers.DeleteSession)
+	}
 
-	router.GET("/chat", func(ctx *gin.Context) {
-		websocket.ServeWs(ctx.Writer, ctx.Request)
-	})
+	projectRoutes := router.Group("/api")
+	{
+		projectRoutes.POST("/api/uploadProject", handlers.UploadProject)
+		projectRoutes.GET("/api/downloadProject", handlers.DownloadProject)
+	}
 
-	router.POST("/api/uploadProject", handlers.UploadProject)
-	router.GET("/api/downloadProject", handlers.DownloadProject)
+	wsRoutes := router.Group("/")
+	{
+		wsRoutes.GET("/ws", func(ctx *gin.Context) {
+			websocket.WsHandler(ctx.Writer, ctx.Request)
+		})
 
-	router.GET("/api/user", handlers.GetUserInfo)
-	router.POST("/api/refresh-token", handlers.RefreshToken)
+		wsRoutes.GET("/chat", func(ctx *gin.Context) {
+			websocket.ServeWs(ctx.Writer, ctx.Request)
+		})
+	}
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }

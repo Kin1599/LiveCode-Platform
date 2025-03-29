@@ -1,0 +1,459 @@
+basePath: /
+definitions:
+  handlers.CreateSessionResponse:
+    properties:
+      session_id:
+        type: string
+      url:
+        type: string
+    type: object
+  handlers.CreateTemplateResponse:
+    properties:
+      template_id:
+        type: string
+    type: object
+  handlers.DownloadProjectResponse:
+    properties:
+      project_structure:
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handlers.GetAllTemplatesResponse:
+    properties:
+      templates:
+        items:
+          $ref: '#/definitions/models.Template'
+        type: array
+    type: object
+  handlers.GetSessionResponse:
+    properties:
+      session:
+        $ref: '#/definitions/models.Session'
+    type: object
+  handlers.GetTemplateResponse:
+    properties:
+      template:
+        $ref: '#/definitions/models.Template'
+    type: object
+  handlers.LoginResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  handlers.RegisterResponse:
+    properties:
+      user_id:
+        type: string
+    type: object
+  handlers.UploadProjectResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  handlers.UserCredentials:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  models.Session:
+    properties:
+      accessType:
+        type: string
+      createdAt:
+        type: string
+      expirationTime:
+        type: string
+      id:
+        type: string
+      idOwner:
+        type: string
+      isActive:
+        type: boolean
+      isEditable:
+        type: boolean
+      language:
+        type: string
+      maxUsers:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.Template:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      id:
+        type: integer
+      language:
+        type: string
+      name:
+        type: string
+      nickname:
+        type: string
+      templateCode:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: LiveCode API
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: LiveCode API
+  version: "1.0"
+paths:
+  /api/downloadProject:
+    get:
+      consumes:
+      - application/json
+      description: Скачивание проекта
+      parameters:
+      - description: ID проекта
+        in: query
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DownloadProjectResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Скачивание проекта
+      tags:
+      - s3
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход пользователя
+      parameters:
+      - description: Login credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UserCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Авторизация пользователя
+      tags:
+      - auth
+  /api/ping:
+    get:
+      consumes:
+      - application/json
+      description: Эндпоинт для проверки работы сервера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+      summary: Проверка работы сервера
+      tags:
+      - ping
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация нового пользователя
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UserCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /api/session:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID сессии
+        in: query
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Удаление сессии по ID
+      tags:
+      - session
+    get:
+      consumes:
+      - application/json
+      description: Получение сессии по ID
+      parameters:
+      - description: ID сессии
+        in: query
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение сессии по ID
+      tags:
+      - session
+    post:
+      consumes:
+      - application/json
+      description: Создание новой сессии
+      parameters:
+      - description: ID пользователя
+        in: formData
+        name: owner_id
+        required: true
+        type: string
+      - description: Редактируемая ли сессия
+        in: formData
+        name: editable
+        required: true
+        type: boolean
+      - description: Название сессии
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Язык программирования
+        in: formData
+        name: language
+        required: true
+        type: string
+      - description: Максимальное количество пользователей
+        in: formData
+        name: max_users
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CreateSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Создание новой сессии
+      tags:
+      - session
+  /api/template:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID шаблона
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetTemplateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение шаблона по ID
+      tags:
+      - template
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Название шаблона
+        in: formData
+        name: template_name
+        required: true
+        type: string
+      - description: Язык программирования
+        in: formData
+        name: language
+        required: true
+        type: string
+      - description: Код шаблона
+        in: formData
+        name: template_code
+        required: true
+        type: string
+      - description: ID создателя
+        in: formData
+        name: creator_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CreateTemplateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Создание нового шаблона
+      tags:
+      - template
+  /api/templates:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GetAllTemplatesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Получение всех шаблонов
+      tags:
+      - template
+  /api/uploadProject:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загрузка проекта
+      parameters:
+      - description: ID проекта
+        in: formData
+        name: project_id
+        required: true
+        type: string
+      - description: Структура проекта
+        in: formData
+        name: project_structure
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.UploadProjectResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Загрузка проекта
+      tags:
+      - s3
+securityDefinitions:
+  OAuth2Password:
+    flow: password
+    tokenUrl: /api/login
+    type: oauth2
+swagger: "2.0"

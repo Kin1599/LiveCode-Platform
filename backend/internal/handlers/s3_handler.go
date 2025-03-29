@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"livecode/internal/services/filestorage"
 	"net/http"
 
@@ -14,29 +13,41 @@ func InitS3Client(client *filestorage.S3Client) {
 	s3Client = client
 }
 
+type UploadProjectRequest struct {
+	ProjectID        string `form:"project_id" binding:"required"`
+	ProjectStructure string `form:"project_structure" binding:"required"`
+}
+
 // UploadProject godoc
 // @Summary Загрузка проекта
 // @Description Загрузка проекта
 // @Tags s3
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param project_id formData string true "ID проекта"
 // @Param project_structure formData string true "Структура проекта"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} UploadProjectResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/uploadProject [post]
 func UploadProject(c *gin.Context) {
-	fmt.Println(c.Request.PostForm)
-	projectID := c.PostForm("project_id")
-	projectStructure := c.PostForm("project_structure")
+	var req UploadProjectRequest
 
-	if err := s3Client.UploadProject(projectID, []byte(projectStructure)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request parameters"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully"})
+	if err := s3Client.UploadProject(req.ProjectID, []byte(req.ProjectStructure)); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, UploadProjectResponse{Message: "File uploaded successfully"})
+}
+
+type DownloadProjectRequest struct {
+	ProjectID string `form:"project_id" binding:"required"`
 }
 
 // DownloadProject godoc
@@ -46,23 +57,23 @@ func UploadProject(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param project_id query string true "ID проекта"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} DownloadProjectResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/downloadProject [get]
 func DownloadProject(c *gin.Context) {
-	projectID := c.Query("project_id")
+	var req DownloadProjectRequest
 
-	if projectID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing Project ID"})
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Missing Project ID"})
 		return
 	}
 
-	projectStructure, err := s3Client.DownloadProject(projectID)
+	projectStructure, err := s3Client.DownloadProject(req.ProjectID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"project_structure": string(projectStructure)})
+	c.JSON(http.StatusOK, DownloadProjectResponse{ProjectStructure: string(projectStructure)})
 }

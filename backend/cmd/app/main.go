@@ -2,21 +2,29 @@ package main
 
 import (
 	"fmt"
-	"log"
-
+	_ "livecode/docs"
 	"livecode/internal/app"
 	"livecode/internal/config"
 	"livecode/internal/handlers"
 	"livecode/internal/routes"
 	"livecode/internal/services/filestorage"
 	"livecode/internal/websocket"
+	"log"
 )
 
 // @title LiveCode API
 // @version 1.0
 // @description LiveCode API
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
 // @host localhost:8080
-// @BasePath /api
+// @BasePath /
+// @securityDefinitions.oauth2.password OAuth2Password
+// @in header
+// @name Authorization
+// @tokenUrl /api/login
 
 func main() {
 	cfg := config.MustLoad()

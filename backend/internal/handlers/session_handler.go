@@ -30,14 +30,14 @@ func InitSessionService(service *session.SessionService) {
 // @Tags session
 // @Accept json
 // @Produce json
-// @Param owner_id query string true "ID пользователя"
-// @Param editable query boolean true "Редактируемая ли сессия"
-// @Param title query string true "Название сессии"
-// @Param language query string true "Язык программирования"
-// @Param max_users query integer true "Максимальное количество пользователей"
-// @Success 200 {object} gin.H
-// @Failure 400 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param owner_id formData string true "ID пользователя"
+// @Param editable formData boolean true "Редактируемая ли сессия"
+// @Param title formData string true "Название сессии"
+// @Param language formData string true "Язык программирования"
+// @Param max_users formData integer true "Максимальное количество пользователей"
+// @Success 200 {object} CreateSessionResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/session [post]
 func CreateSession(c *gin.Context) {
 	ownerId := c.PostForm("owner_id")
@@ -49,19 +49,19 @@ func CreateSession(c *gin.Context) {
 	maxUsers, err := strconv.ParseInt(maxUsersStr, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid max_users value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid max_users value"})
 		return
 	}
 
 	ownerUUID, err := uuid.Parse(ownerId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid owner_id value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid owner_id value"})
 		return
 	}
 
 	sessionID, err := utils.GenerateSessionID()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate session ID"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate session ID"})
 		return
 	}
 
@@ -80,7 +80,7 @@ func CreateSession(c *gin.Context) {
 
 	_, err = sessionService.CreateNewSession(context.Background(), sessionID, ownerUUID, title, language, "Public", maxUsers, editable)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -88,9 +88,9 @@ func CreateSession(c *gin.Context) {
 	sessions[sessionID] = session
 	mutex.Unlock()
 
-	c.JSON(http.StatusOK, gin.H{
-		"session_id": sessionID.String(),
-		"url":        "/code-input/" + sessionID.String(),
+	c.JSON(http.StatusOK, CreateSessionResponse{
+		SessionID: sessionID.String(),
+		URL:       "/code-input/" + sessionID.String(),
 	})
 }
 
@@ -101,16 +101,16 @@ func CreateSession(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param session_id query string true "ID сессии"
-// @Success 200 {object} models.Session
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Success 200 {object} GetSessionResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
 // @Router /api/session [get]
 func GetSession(c *gin.Context) {
 	sessionIDStr := c.Query("session_id")
 	sessionID, err := uuid.Parse(sessionIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid session_id value"})
 		return
 	}
 
@@ -121,20 +121,30 @@ func GetSession(c *gin.Context) {
 	sessionModel, err := sessionService.GetSession(context.Background(), sessionID)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: "Session not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, sessionModel)
+	c.JSON(http.StatusOK, GetSessionResponse{Session: sessionModel})
 }
 
+// DeleteSession godoc
+// @Summary Удаление сессии по ID
+// @Tags session
+// @Accept json
+// @Produce json
+// @Param session_id query string true "ID сессии"
+// @Success 200 {object} string
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/session [delete]
 func DeleteSession(c *gin.Context) {
 	sessionIDStr := c.Query("session_id")
 	sessionID, err := uuid.Parse(sessionIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid session_id value"})
 		return
 	}
 
@@ -144,40 +154,71 @@ func DeleteSession(c *gin.Context) {
 
 	err = sessionService.DeleteSession(context.Background(), sessionID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, "DELETED")
 }
 
+// GetTemplate godoc
+// @Summary Получение шаблона по ID
+// @Tags template
+// @Accept json
+// @Produce json
+// @Param id query string true "ID шаблона"
+// @Success 200 {object} GetTemplateResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/template [get]
 func GetTemplate(c *gin.Context) {
 	templateIDstr := c.Query("id")
 	templateID, err := uuid.Parse(templateIDstr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session_id value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid session_id value"})
 		return
 	}
 
 	template, err := sessionService.TemplateByID(context.Background(), templateID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, template)
+	c.JSON(http.StatusOK, GetTemplateResponse{Template: template})
 }
 
+// GetAllTemplates godoc
+// @Summary Получение всех шаблонов
+// @Tags template
+// @Accept json
+// @Produce json
+// @Success 200 {object} GetAllTemplatesResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/templates [get]
 func GetAllTemplates(c *gin.Context) {
 	templates, err := sessionService.AllTemplates(context.Background())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, templates)
+	c.JSON(http.StatusOK, GetAllTemplatesResponse{Templates: templates})
 }
 
-func CrateTemplate(c *gin.Context) {
+// CreateTemplate godoc
+// @Summary Создание нового шаблона
+// @Tags template
+// @Accept json
+// @Produce json
+// @Param template_name formData string true "Название шаблона"
+// @Param language formData string true "Язык программирования"
+// @Param template_code formData string true "Код шаблона"
+// @Param creator_id formData string true "ID создателя"
+// @Success 200 {object} CreateTemplateResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /api/template [post]
+func CreateTemplate(c *gin.Context) {
 	templateName := c.PostForm("template_name")
 	language := c.PostForm("language")
 	templateCode := c.PostForm("template_code")
@@ -185,7 +226,7 @@ func CrateTemplate(c *gin.Context) {
 
 	creatorUUID, err := uuid.Parse(creatorUUIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid owner_id value"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid owner_id value"})
 		return
 	}
 
@@ -193,11 +234,11 @@ func CrateTemplate(c *gin.Context) {
 		language, templateCode, creatorUUID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"template_id": templatesUUID,
+	c.JSON(http.StatusOK, CreateTemplateResponse{
+		TemplateID: templatesUUID,
 	})
 }
