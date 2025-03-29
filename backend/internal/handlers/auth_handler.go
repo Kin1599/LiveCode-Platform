@@ -20,9 +20,14 @@ func InitAuthService(service *auth.Auth) {
 	authService = service
 }
 
-type UserCredentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type RegisterRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" form:"username" binding:"required,email"`
+	Password string `json:"password" form:"password" binding:"required"`
 }
 
 // Register godoc
@@ -31,13 +36,13 @@ type UserCredentials struct {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param user body UserCredentials true "User registration details"
+// @Param user body RegisterRequest true "User registration details"
 // @Success 200 {object} RegisterResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /api/register [post]
 func Register(c *gin.Context) {
-	var creds UserCredentials
+	var creds RegisterRequest
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request"})
@@ -58,19 +63,26 @@ func Register(c *gin.Context) {
 // @Summary Авторизация пользователя
 // @Description Вход пользователя
 // @Tags auth
-// @Accept json
+// @Accept json,x-www-form-urlencoded
 // @Produce json
-// @Param user body UserCredentials true "Login credentials"
-// @Success 200 {object} LoginResponse
+// @Param user body LoginRequest true "Login credentials"
+// @Success 200 {object} OAuth2Response
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /api/login [post]
 func Login(c *gin.Context) {
-	var creds UserCredentials
+	var creds LoginRequest
 
-	if err := c.ShouldBindJSON(&creds); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request"})
-		return
+	if c.ContentType() == "application/json" {
+		if err := c.ShouldBindJSON(&creds); err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
+	} else {
+		if err := c.ShouldBind(&creds); err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
 	}
 
 	if creds.Email == "" || creds.Password == "" {
@@ -85,7 +97,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+	response := OAuth2Response{
+		AccessToken:  accessToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    3600,
+		RefreshToken: refreshToken,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func RefreshToken(c *gin.Context) {

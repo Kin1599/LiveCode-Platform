@@ -39,12 +39,36 @@ definitions:
       template:
         $ref: '#/definitions/models.Template'
     type: object
-  handlers.LoginResponse:
+  handlers.LoginRequest:
     properties:
-      accessToken:
+      email:
         type: string
-      refreshToken:
+      password:
         type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.OAuth2Response:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
     type: object
   handlers.RegisterResponse:
     properties:
@@ -54,13 +78,6 @@ definitions:
   handlers.UploadProjectResponse:
     properties:
       message:
-        type: string
-    type: object
-  handlers.UserCredentials:
-    properties:
-      email:
-        type: string
-      password:
         type: string
     type: object
   models.Session:
@@ -150,6 +167,7 @@ paths:
     post:
       consumes:
       - application/json
+      - application/x-www-form-urlencoded
       description: Вход пользователя
       parameters:
       - description: Login credentials
@@ -157,14 +175,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/handlers.UserCredentials'
+          $ref: '#/definitions/handlers.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.LoginResponse'
+            $ref: '#/definitions/handlers.OAuth2Response'
         "400":
           description: Bad Request
           schema:
@@ -202,7 +220,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/handlers.UserCredentials'
+          $ref: '#/definitions/handlers.RegisterRequest'
       produces:
       - application/json
       responses:

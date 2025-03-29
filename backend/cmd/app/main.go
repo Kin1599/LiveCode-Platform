@@ -22,9 +22,9 @@ import (
 // @host localhost:8080
 // @BasePath /
 // @securityDefinitions.oauth2.password OAuth2Password
+// @tokenUrl /api/login
 // @in header
 // @name Authorization
-// @tokenUrl /api/login
 
 func main() {
 	cfg := config.MustLoad()
