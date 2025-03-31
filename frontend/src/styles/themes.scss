@@ -1,0 +1,17 @@
+@use "colors.scss" as *;
+
+:root {
+  --bg-color: #{$background-color};
+  --text-color: #{$main-text-color};
+}
+
+[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #333;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}

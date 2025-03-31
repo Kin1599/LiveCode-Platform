@@ -22,10 +22,6 @@ export default class SendServer{
             const response = await axios.post(baseUrl + '/login', {
                 email: email,
                 password: password
-            }, {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
             });
             return response;
         } catch (error) {
@@ -124,16 +120,17 @@ export default class SendServer{
      */
     static async createSession(sessionData){
         try {
-            const response = await axios.post(baseUrl + '/session', {
-                owner_id: sessionData.owner_id,
-                editable: sessionData.editable,
-                title: sessionData.title,
-                language: sessionData.language,
-                max_users: sessionData.max_users
-            }, {
+            const formData = new FormData();
+            formData.append('owner_id', sessionData.owner_id);
+            formData.append('editable', sessionData.editable.toString()); 
+            formData.append('title', sessionData.title);
+            formData.append('language', sessionData.language);
+            formData.append('max_users', sessionData.max_users.toString());
+
+            const response = await axios.post(baseUrl + '/session', formData, {
                 headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
+                    "Content-Type": "multipart/form-data"
+                },
             });
             return response.data;
         } catch (error) {

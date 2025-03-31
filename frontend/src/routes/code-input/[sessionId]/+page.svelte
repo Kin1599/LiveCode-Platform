@@ -1,43 +1,49 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
   import HeaderCode from "../../../components/HeaderCode.svelte";
   import TextEditor from "../../../components/CodeWindow.svelte";
   import SideBar from "../../../components/SideBar.svelte";
   import Tabs from "../../../components/Tabs.svelte";
   import ChatWindow from "../../../components/ChatWindow.svelte";
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
-  import SendServer from "../../../api/api";
+  import SendServer from "../../../api/api.js";
+
+  interface Message {
+    user: string;
+    text: string;
+  }
+
+  interface Tab {
+    id: number;
+    name: string;
+  }
+
+  interface TabSection {
+    section: string;
+    tabs: Tab[];
+    activeTab: number;
+  }
+
+  interface Folders {
+    [key: string]: string[];
+  }
 
   $: sessionId = $page.params.sessionId;
 
   let value: string = ""; //для codemirror
-  let messages: { user: string, text: string }[] = []; 
+  let messages: Message[] = []; 
   let currentMessage: string = ""; // для чата
-
-  type Folders = {
-    [key: string]: string[];
-  };
-
   let files: string[] = ["main.py", "script.js", "index.html"];
   let folders: Folders = {};
   let selectedFile: string = "main.py";
   let showMenu: boolean = false;
 
-  const closeMenu = () => {
-    showMenu = false;
-  };
-
-  const handleMenuOption = (option: string) => {
-    alert(`Selected option: ${option}`);
-    closeMenu();
-  };
-
   // для верхнего меню
-  let projectName = "the name of project";
-  let language = "python";
-  let lastModified = "5 days ago";
-  let size = "203.57 MB";
-  let tabs = [
+  let projectName: string = "the name of project";
+  let language: string = "python";
+  let lastModified: string = "5 days ago";
+  let size: string = "203.57 MB";
+  let tabs: TabSection[] = [
     {
       section: "1",
       tabs: [
@@ -56,13 +62,51 @@
     },
   ];
   let searchQuery: string = "";
-
   let isSidebarVisible: boolean = true;
 
-  async function getSessionInfo(sessionId: string) {
+  // WebSocket
+  let ws: WebSocket | null = null; // WebSocket-соединение
+  let chatWs: WebSocket | null = null;
+  let userNickname: string = "";
+
+  const generateUserId = (): string => {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+
+  const generateColor = (): string => {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  }
+
+  const userId: string = generateUserId();
+  const userColor: string = generateColor();
+
+  const closeMenu = (): void => {
+    showMenu = false;
+  };
+
+  const handleMenuOption = (option: string): void => {
+    alert(`Selected option: ${option}`);
+    closeMenu();
+  };
+
+  // для переключения состояния видимости бокового блока
+  const toggleSidebar = (): void => {
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  const handleTabClick = (section: string, event: CustomEvent<{ tabId: number }>): void => {
+    const tabSection = tabs.find(tab => tab.section === section);
+    if (tabSection){
+      tabSection.activeTab = event.detail.tabId; 
+    }    
+  };
+
+  const getNickname = (): Promise<string> =>
+    new Promise((resolve) => setTimeout(() => resolve("Стандартное Имя"), 1000));
+
+  const getSessionInfo = async (sessionId: string): Promise<void> => {
     try {
       const response = await SendServer.getSessionInfo(sessionId);
-      console.log(response);
       if (response) {
         projectName = response.Title;
         language = response.Language;
@@ -73,116 +117,103 @@
     }
   }
 
-  onMount(() => {
-    getSessionInfo(sessionId);
-  });
-
-  // для переключения состояния видимости бокового блока
-  function toggleSidebar(): void {
-    isSidebarVisible = !isSidebarVisible;
-  }
-
-  const handleTabClick = (section: string, event: CustomEvent<{ tabId: number }>) => {
-    const tabSection = tabs.find(tab => tab.section === section);
-    if (tabSection){
-      tabSection.activeTab = event.detail.tabId; 
-    }    
-  };
-
-  async function getNickname(): Promise<string> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve("Стандартное Имя");
-      }, 1000);
-    });
-  }
-
-  let ws: WebSocket; // WebSocket-соединение
-  let chatWs: WebSocket;
-  let userId: string = generateUserId();
-  let userNickname: string = "";
-  const userColor = generateColor();
-
-  function generateUserId(): string {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
-  }
-
-  function generateColor(): string {
-    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-  }
-
-  function connect() {
-    ws = new WebSocket(`ws://217.114.2.64/ws?session_id=${sessionId}`);
+  const connect = (): void => {
+    ws = new WebSocket(`ws://localhost:8080/ws?session_id=${sessionId}`);
 
     ws.onopen = () => {
       console.log("Connected to WebSocket server with session_id:", sessionId);
-      ws.send(
+      ws?.send(
         JSON.stringify({
           type: "init",
-          userId,
-          color: userColor,
+          userId: userId,
           nickname: userNickname,
+          sessionId: sessionId,
         })
       );
     };
 
     ws.onmessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      if (data.userId !== userId && data.type === "update") {
-        value = data.text; // обновление значения при получении данных
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Raw message on /ws:", event.data);
+        console.log("Parsed message on /ws:", data);
+        if (data.type === "history") {
+          console.log("History received on /ws:", data.history || "No history field");
+          // Можно обработать историю, если нужно
+        } else if (data.type === "update" && data.userId !== userId) {
+          value = data.text;
+        }
+      } catch (error) {
+        console.error("Error parsing message on /ws:", error);
+        ws?.close(1000, "Error parsing message");
       }
     };
 
-    ws.onclose = () => {
-      console.log("Соединение закрыто, переподключение...");
+    ws.onclose = (event: CloseEvent) => {
+      console.log("Соединение /ws закрыто:", event.code, event.reason, "wasClean:", event.wasClean);
       setTimeout(connect, 1000);
     };
 
     ws.onerror = (error) => {
-      console.error("Ошибка WebSocket:", error);
+      console.error("Ошибка WebSocket /ws:", error);
     };
   }
 
-  // Отправка изменений на сервер при изменении текста
-  $: {
-    if (ws?.readyState === WebSocket.OPEN) {
-      const message = {
-        type: "update",
-        text: value,
-        userId,
-        color: userColor,
-      };
-      ws.send(JSON.stringify(message));
-    }
-  }
-
-  getNickname().then((nickname) => {
-    userNickname = nickname;
-    connect(); // Подключение к WebSocket только после получения ника
-    connectChat();
-  });
-
-  function connectChat(){
-    chatWs = new WebSocket(`ws://217.114.2.64/chat?userId=${userId}`);
+  const connectChat = (): void => {
+    chatWs = new WebSocket(`ws://localhost:8080/chat?session_id=${sessionId}`);
 
     chatWs.onopen = () => {
       console.log("Websocket соединение для чата установлено");
+      chatWs?.send(
+        JSON.stringify({
+          type: "init",
+          userId: userId,
+          nickname: userNickname,
+          sessionId: sessionId,
+        })
+      );
     };
 
     chatWs.onmessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      messages = [...messages, { user: data.user, text: data.text }];
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "history") {
+          console.log("History received on /chat:", data.history || "No history field");
+        } else if (data.type === "chat") {
+          if (data.userId !== userId) {
+            const userName = data.nickname || data.userId || "Unknown";
+            messages = [...messages, { user: userName, text: data.text }];
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing message on /chat:", error);
+        chatWs?.close(1000, "Error parsing message"); 
+      }
     };
 
-    chatWs.onclose = () => {
-      console.log("Соединение для чата закрыто, переподключение...");
+    chatWs.onclose = (event: CloseEvent) => {
+      console.log("Соединение /chat закрыто:", event.code, event.reason, "wasClean:", event.wasClean);
       setTimeout(connectChat, 1000);
     };
 
     chatWs.onerror = (error) => {
-      console.error("Ошибка WebSocket:", error);
+      console.error("Ошибка WebSocket /chat:", error);
     };
   }
+
+  const sendMessage = (message: string): void => {
+    if (chatWs?.readyState === WebSocket.OPEN) {
+      const chatMessage = { 
+        type: "chat",
+        userId: userId,
+        user: userNickname, 
+        text: message 
+      };
+      chatWs.send(JSON.stringify(chatMessage));
+      messages = [...messages, { user: userNickname, text: message }];
+      currentMessage = "";
+    }
+  };
 
   // Отправка изменений на сервер при изменении текста 
   $: { 
@@ -190,23 +221,19 @@
       const message = { 
         type: "update",
         text: value, 
-        userId, 
+        userId: userId,
+        color: userColor, 
       }; 
       ws.send(JSON.stringify(message)); 
     } 
   }
 
-  function sendMessage(message: string) { 
-    if (chatWs?.readyState === WebSocket.OPEN) { 
-      const chatMessage = { 
-        user: userNickname, 
-        text: message 
-      }; 
-    chatWs.send(JSON.stringify(chatMessage)); 
-    messages = [...messages, chatMessage]; 
-    currentMessage = ""; 
-    } 
-  }
+  onMount(async () => {
+    await getSessionInfo(sessionId);
+    userNickname = await getNickname();
+    connect();
+    connectChat(); 
+  });
 </script>
 
 <div class="container">
@@ -219,7 +246,7 @@
   />
 
   <div class="content">
-    <div class="sidebar {isSidebarVisible ? '' : 'hidden'}">
+    <div class="sidebar" class:hidden={!isSidebarVisible}>
       <SideBar
         {files}
         {folders}
@@ -231,7 +258,11 @@
     <div class="main">
       <div class="code-section">
         <div class="tabs">
-          <Tabs tabs={tabs[0].tabs} activeTab={tabs[0].activeTab} onTabClick={(event) => handleTabClick("1", event)} /> 
+          <Tabs 
+            tabs={tabs[0].tabs} 
+            activeTab={tabs[0].activeTab} 
+            onTabClick={(event) => handleTabClick("1", event)} 
+          /> 
         </div>
         <div class="code-window">
           <TextEditor bind:value />
@@ -239,7 +270,11 @@
       </div>  
       <div class="chat-section">
         <div class="tabs">
-          <Tabs tabs={tabs[1].tabs} activeTab={tabs[1].activeTab} onTabClick={(event) => handleTabClick("2", event)} /> 
+          <Tabs 
+            tabs={tabs[1].tabs} 
+            activeTab={tabs[1].activeTab} 
+            onTabClick={(event) => handleTabClick("2", event)} 
+          /> 
         </div>
         <div class="chat-window">
           <ChatWindow {messages} {currentMessage} {sendMessage} />
@@ -249,7 +284,9 @@
   </div>
 </div>
 
-<style>
+<style lang="scss">
+  @use "../../../styles/colors.scss" as *; 
+
   .container {
     display: flex;
     flex-direction: column;
@@ -266,16 +303,15 @@
     width: 17.5rem;
     padding: 20px;
     box-sizing: border-box;
-    border-right: 1px solid #444;
+    border-right: 1px solid $border-color;
     transition: width 0.3s, opacity 0.3s;
+  
+    &.hidden {
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
   }
-
-  .sidebar.hidden {
-    width: 0;
-    opacity: 0;
-    overflow: hidden;
-  }
-
 
   /* основной блок */
   .main {
@@ -287,7 +323,7 @@
   .code-section{
     display: flex;
     flex-direction: column;
-    border-radius: 0px 10px 0px 0px;
+    border-radius: 0 10px 0 0;
     flex: 1;
   }
 
@@ -299,7 +335,7 @@
   .chat-section{
     display: flex;
     flex-direction: column;
-    border-radius: 10px 0px 0px 0px;
+    border-radius: 10px 0 0 0;
     flex: 1;
     overflow: hidden;
   }

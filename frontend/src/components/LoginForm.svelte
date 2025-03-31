@@ -1,6 +1,6 @@
-<script>
-    import SendServer from "../api/api.js";
-  
+<script lang="ts">
+    import SendServer from "../api/api.js";  
+    
     let email = "";
     let password = "";
     let message = "";
@@ -13,8 +13,8 @@
             const response = await SendServer.login(email, password);
             console.log(response);
             if (response.status === 200) {
-                localStorage.setItem("token", response.data.accessToken);
-                localStorage.setItem("refreshToken", response.data.refreshToken);
+                localStorage.setItem("token", response.data.access_token);
+                localStorage.setItem("refreshToken", response.data.refresh_token);
                 message = "Успешный вход";
                 window.location.assign("/#");
             } else {

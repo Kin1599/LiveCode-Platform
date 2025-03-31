@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import SendServer from "../api/api.js";
 
   import CreateRepl from "../components/CreateRepl.svelte";
@@ -6,12 +7,18 @@
   import Repls from "../components/Repls.svelte";
   import Settings from "../components/Settings.svelte";
   import SideBarMain from "../components/SideBarMain.svelte";
-  import { onMount } from "svelte";
   
+  interface FileItem {
+    name: string;
+    date: string;
+    size: string;
+    visibility: string;
+  }
+
   interface Folder {
     name: string;
     type: string;
-    files: Array<any>;
+    files: FileItem[];
   }
 
   let templates = [
@@ -20,23 +27,16 @@
     { name: "Fibonachi", author: "misplit", language: "python" },
   ];
 
-  let file = {
-    name: "QuintessentialDarkvioletCertifications",
-    date: "5 days ago",
-    size: "203.57 MiB",
-    visibility: "Public",
-  };
-
-  let folders = [
-    { name: "Shared with me", type: "shared", files: [file] },
+  let folders: Folder[] = [
+    { name: "Shared with me", type: "shared", files: [] },
     { name: "Unnamed (1)", type: "folder", files: [] },
   ];
 
-  let repls = 1; //для количества реп
-  let selected = "Repls"; //для выбранного пункта меню
-  let showBlocks = true; //для показа/скрытия бокового блока
-  let searchQuery = ""; //для поиска
-  let username = "username"; //для ника
+  let repls = 1; 
+  let selected = "Repls"; 
+  let showBlocks = true; 
+  let searchQuery = ""; 
+  let username = "Guest"; 
   let userID = "";
 
   let openedFolder: Folder | null = null;
@@ -47,59 +47,48 @@
       if (token){
         const response = await SendServer.getUserInfo(token);
         username = response.Nickname || "Guest";
-        userID = response.ID;
+        userID = response?.ID || "";
       }
     } catch (error) {
       console.error("Error fetching user info:", error);
     }
   }
 
-  onMount(() => {
-    fetchUserInfo();
-  });
+  onMount(fetchUserInfo);
 
-  function selectItem(item: string) {
+  function selectItem(item: typeof selected) {
     selected = item;
     openedFolder = null;
   }
 
-  // Для переключения состояния видимости бокового блока
   function toggleVisibility() {
     showBlocks = !showBlocks;
   }
 
-  // Для открытия папки
   function openFolder(folder: Folder) {
     openedFolder = folder;
   }
 
   function getLanguageIcon(language: string){
-    switch(language) {
-      case "python":
-        return "./images/python-icon.svg"
-      case "javascript":
-        return "./images/javascript-icon.svg"
-      case "golang":
-        return "./images/golang-icon.svg"
-      default:
-        return "./images/python-icon.svg"
-    }
+    const icons: Record<string, string> = {
+      python: "./images/python-icon.svg",
+      javascript: "./images/javascript-icon.svg",
+      golang: "./images/golang-icon.svg",
+    };
+    return icons[language] || icons.python;
   }
 
-
-  // для создания новой папки
   function createNewFolder(name: string) {
     let newFolderName = name || "Unnamed";
-    let folderExists = folders.some(folder => folder.name === newFolderName);
-    if (folderExists) {
-      let counter = 1;
-      while (folders.some(folder => folder.name === `${newFolderName} (${counter})`)) {
-        counter++;
-      }
-      newFolderName = `${newFolderName} (${counter})`;
+    let counter = 1;
+
+    while (folders.some(folder => folder.name === newFolderName)) {
+      newFolderName = `${name} (${counter++})`;
     }
-    folders.push({ name: newFolderName, type: "folder", files: [] });
-    openFolder({ name: newFolderName, type: "folder", files: [] });
+
+    const newFolder = { name: newFolderName, type: "folder", files: [] };
+    folders = [...folders, newFolder];
+    openFolder(newFolder);
   }
 
   async function createNewSession(sessionData: {
@@ -112,22 +101,21 @@
     try {
       const response = await SendServer.createSession(sessionData);
       if (response) {
-        repls += 1;
+        repls++;
         console.log("Repl created successfully");
 
-        let unnamedFolder = folders.find(folder => folder.name === "Unnamed (1)");
-        if (!unnamedFolder) {
-          unnamedFolder = { name: "Unnamed (1)", type: "folder", files: [] };
-          folders.push(unnamedFolder);
-        }
-
+        const unnamedFolder = folders.find(
+          folder => folder.name === "Unnamed (1)") || 
+          { name: "Unnamed (1)", type: "folder", files: [] };
+        
         unnamedFolder.files.push({
-            name: sessionData.title,
-            date: new Date().toLocaleDateString(),
-            size: "0 B",
-            visibility: "Public",
-          });
+          name: sessionData.title,
+          date: new Date().toLocaleDateString(),
+          size: "0 B",
+          visibility: "Public",
+        });
 
+        folders = [...folders];
         window.location.assign(response.url);
       } else {
         console.error("Error creating repl:", response.message);
@@ -140,32 +128,37 @@
 
 <div class="layout">
   <HeaderMain {searchQuery} {toggleVisibility}/>
-
   <SideBarMain {selected} {selectItem} {showBlocks}/>
 
   <main
     class="main"
     class:expanded={!showBlocks}
-    style="margin-left: 4rem; margin-top: 2.5rem; margin-right: 4rem"
   >
     {#if selected === "Repls"}
       <Repls {folders} {openedFolder} {openFolder} {repls} {selectItem} {createNewFolder}/>
     {:else if selected === "Настройки"}
       <Settings />
     {:else if selected === "create-repl"}
-      <CreateRepl {templates} {getLanguageIcon} {createNewSession} owner_id={userID}/>
+        {#if userID}
+          <CreateRepl {templates} {getLanguageIcon} {createNewSession} owner_id={userID}/>
+        {:else}
+          <p>Loading...</p>
+        {/if}
     {/if}
   </main>
 
-  <div class="user-panel {showBlocks ? '' : 'hidden'}">
+  <div class="user-panel" class:hidden={!showBlocks}>
     <div class="user-info">
       <div class="avatar"></div>
-      <div><a href="/login">{username}</a></div>
+      <a href="/login">{username}</a>
     </div>
   </div>
 </div>
 
-<style>
+<style lang="scss">
+  @use "../styles/colors.scss" as *;
+  @use "../styles/fonts.scss" as *;
+
   .layout {
     display: grid;
     grid-template-areas:
@@ -187,27 +180,22 @@
     transform: translateX(-12rem);
   }  
 
-
-  /* основной блок */
   .main {
     grid-area: main;
     padding: 20px;
   }
-
   
-  /* блок пользователя */
   .user-panel {
     grid-area: user-panel;
     padding: 20px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #444;
-    border-right: 1px solid #444;
+    border-bottom: 1px solid $border-color;
+    border-right: 1px solid $border-color;
   }
 
   .user-info {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 10px;
   }
@@ -215,7 +203,7 @@
   .avatar {
     width: 2.5rem;
     height: 2.5rem;
-    background-color: #444;
+    background-color: $avatar-bg;
     border-radius: 50%;
   }
 
@@ -223,7 +211,7 @@
     font-size: 20px;
     font-weight: 300px;
     text-decoration: none;
-    color: #fff;
+    color: $text-color;
   }
 
 </style>
