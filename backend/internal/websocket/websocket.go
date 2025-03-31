@@ -41,7 +41,7 @@ type Message struct {
 	Color     string          `json:"color"`
 	Nickname  string          `json:"nickname"`
 	SessionID string          `json:"sessionId"`
-	History   []Message       `json:"history,omitempty"`
+	History   []Message       `json:"history"`
 }
 
 func generateColor() string {

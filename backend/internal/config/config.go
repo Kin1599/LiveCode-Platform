@@ -22,44 +22,51 @@ type StorageConfig struct {
 	BucketName string `yaml:"bucket_name"`
 }
 
-func MustLoad() *Config {
-	path := fetchConfigPath()
-	if path == "" {
-		panic("config path is empty")
+func Load() (*Config, error) {
+	configPath, err := fetchConfigPath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch config path: %w", err)
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		panic("config file does not exist: " + path)
+	if configPath == "" {
+		return nil, fmt.Errorf("config path is empty")
 	}
 
 	var cfg Config
-
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		panic("failed to read config " + err.Error())
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to read config from %s: %w", configPath, err)
 	}
 
-	return &cfg
+	return &cfg, nil
 }
 
-func fetchConfigPath() string {
-	var res string
+func MustLoad() *Config {
+	cfg, err := Load()
+	if err != nil {
+		panic(fmt.Sprintf("failed to load config: %v", err))
+	}
+	return cfg
+}
 
-	flag.StringVar(&res, "config", "", "path to config file")
+func fetchConfigPath() (string, error) {
+	var configPath string
+
+	flag.StringVar(&configPath, "config", "", "path to config file")
 	flag.Parse()
 
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = os.Getenv("CONFIG_PATH")
 	}
 
-	return res
+	return configPath, nil
 }
 
-func ConStringFromCfg(storageCfg StorageConfig) string {
+func BuildDBConnectionString(cfg StorageConfig) string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		storageCfg.User,
-		storageCfg.Pass,
-		storageCfg.Host,
-		storageCfg.Port,
-		storageCfg.Name,
+		cfg.User,
+		cfg.Pass,
+		cfg.Host,
+		cfg.Port,
+		cfg.Name,
 	)
 }

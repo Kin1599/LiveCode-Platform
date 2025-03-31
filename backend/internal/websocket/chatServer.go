@@ -1,14 +1,16 @@
 package websocket
 
+import (
+	"context"
+)
 
 var clients = make(map[*Client]bool)
 var register = make(chan *Client)
 var unregister = make(chan *Client)
 var broadcast = make(chan []byte)
 
-
 // Run our websocket server, accepting various requests
-func Run() {
+func Run(ctx context.Context) error {
 	for {
 		select {
 
@@ -20,8 +22,10 @@ func Run() {
 
 		case message := <-broadcast:
 			broadcastToClients(message)
-		}
 
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 }
 

@@ -37,9 +37,9 @@ const (
 	getTempleByID        = "SELECT id, name, language, template_code, created_by FROM \"Templates\" WHERE id = $1"
 	saveNewTemplate      = "INSERT INTO \"Templates\" VALUES($1, $2, $3, $4, $5, $6, $7)"
 	updateUserEmail      = "UPDATE \"Users\" SET email = $1 WHERE id = $2"
-	updateUserNickname  = "UPDATE \"Users\" SET nickname = $1 WHERE id = $2"
+	updateUserNickname   = "UPDATE \"Users\" SET nickname = $1 WHERE id = $2"
 	updateUserAvatar     = "UPDATE \"Users\" SET avatar = $1 WHERE id = $2"
-	updateUserPassword  = "UPDATE \"Users\" SET password_hash = $1 WHERE id = $2"
+	updateUserPassword   = "UPDATE \"Users\" SET password_hash = $1 WHERE id = $2"
 )
 
 func New(storagePath string) (*Storage, error) {
@@ -111,7 +111,7 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 }
 
 func (s *Storage) ChangeUserInfo(ctx context.Context, newEmail string, newNickname string,
-	 newAvatar string, newPassword string) error {
+	newAvatar string, newPassword string) error {
 	const op = "database.ChangeUserInfo"
 
 	if newEmail != "" {
